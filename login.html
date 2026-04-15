@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>项目管理平台 - 登录</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        .login-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            display: flex;
+            max-width: 900px;
+            width: 90%;
+        }
+        .login-left {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 60px 40px;
+            color: white;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .login-left h1 {
+            font-size: 28px;
+            margin-bottom: 20px;
+        }
+        .login-left p {
+            font-size: 14px;
+            opacity: 0.9;
+            line-height: 1.8;
+        }
+        .login-right {
+            padding: 60px 40px;
+            flex: 1;
+        }
+        .login-right h2 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #666;
+            font-size: 14px;
+        }
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .form-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .form-options a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        .form-options a:hover {
+            text-decoration: underline;
+        }
+        .btn-login {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .alert-danger {
+            background: #fee;
+            color: #c00;
+            border: 1px solid #fcc;
+        }
+        .demo-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #666;
+        }
+        .demo-info strong {
+            color: #333;
+        }
+        @media (max-width: 768px) {
+            .login-left {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-left">
+            <h1>数学院项目管理平台</h1>
+            <p>面向数学院课题类项目管理场景，实现项目全生命周期管理。</p>
+            <p>支持里程碑管理、任务跟踪、会议管理、纪要解析等核心功能，帮助团队高效协作。</p>
+            <p style="margin-top: 30px; font-size: 12px; opacity: 0.7;">智能提醒 · 自动解析 · 闭环管理</p>
+        </div>
+        <div class="login-right">
+            <h2>欢迎登录</h2>
+            <div id="errorAlert" class="alert alert-danger" style="display: none;"></div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">用户名</label>
+                    <input type="text" class="form-control" id="username" placeholder="请输入用户名" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">密码</label>
+                    <input type="password" class="form-control" id="password" placeholder="请输入密码" required>
+                </div>
+                <div class="form-options">
+                    <label style="display: flex; align-items: center; cursor: pointer;">
+                        <input type="checkbox" id="remember" style="margin-right: 6px;">
+                        记住登录状态
+                    </label>
+                    <a href="#">忘记密码？</a>
+                </div>
+                <button type="submit" class="btn-login">登 录</button>
+            </form>
+            <div class="demo-info">
+                <strong>测试账号：</strong><br>
+                管理员：admin / admin123<br>
+                成员：zhangsan / 123456<br>
+                成员：lisi / 123456
+            </div>
+        </div>
+    </div>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorAlert = document.getElementById('errorAlert');
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    localStorage.setItem('user', JSON.stringify(result.data));
+                    window.location.href = 'index.html';
+                } else {
+                    errorAlert.textContent = result.message || '登录失败，请检查用户名和密码';
+                    errorAlert.style.display = 'block';
+                }
+            } catch (error) {
+                errorAlert.textContent = '网络错误，请稍后重试';
+                errorAlert.style.display = 'block';
+            }
+        });
+        window.onload = function() {
+            const user = localStorage.getItem('user');
+            if (user) {
+                window.location.href = 'index.html';
+            }
+        };
+    </script>
+</body>
+</html>

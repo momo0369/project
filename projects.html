@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>项目管理 - 项目管理平台</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Microsoft YaHei', sans-serif; background: #f5f7fa; min-height: 100vh; }
+        .sidebar { position: fixed; left: 0; top: 0; width: 240px; height: 100vh; background: linear-gradient(180deg, #2c3e50 0%, #1a252f 100%); color: white; padding: 20px 0; z-index: 1000; }
+        .sidebar-header { padding: 0 20px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
+        .sidebar-header h3 { font-size: 18px; margin: 0; }
+        .sidebar-header p { font-size: 12px; opacity: 0.6; margin: 5px 0 0; }
+        .nav-menu { list-style: none; padding: 0 10px; }
+        .nav-menu li { margin-bottom: 5px; }
+        .nav-menu a { display: flex; align-items: center; padding: 12px 15px; color: rgba(255,255,255,0.7); text-decoration: none; border-radius: 8px; transition: all 0.3s; }
+        .nav-menu a:hover, .nav-menu a.active { background: rgba(255,255,255,0.1); color: white; }
+        .nav-menu i { margin-right: 10px; font-size: 18px; }
+        .main-content { margin-left: 240px; padding: 20px 30px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: white; padding: 15px 25px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .header h2 { font-size: 20px; color: #333; margin: 0; }
+        .user-info { display: flex; align-items: center; gap: 15px; }
+        .user-info span { color: #666; }
+        .btn-logout { padding: 8px 16px; background: #e74c3c; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; }
+        .btn-logout:hover { background: #c0392b; }
+        .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
+        .search-box { display: flex; gap: 10px; flex-wrap: wrap; }
+        .search-box input, .search-box select { padding: 10px 15px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; min-width: 150px; }
+        .search-box input:focus, .search-box select:focus { outline: none; border-color: #667eea; }
+        .btn-primary { padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; }
+        .btn-primary:hover { opacity: 0.9; }
+        .project-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px; }
+        .project-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); cursor: pointer; transition: transform 0.3s, box-shadow 0.3s; }
+        .project-card:hover { transform: translateY(-5px); box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
+        .project-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
+        .project-title { font-size: 16px; font-weight: bold; color: #333; margin-bottom: 5px; }
+        .project-code { font-size: 12px; color: #999; }
+        .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; }
+        .status-not_started { background: #f5f5f5; color: #999; }
+        .status-in_progress { background: #e3f2fd; color: #2196f3; }
+        .status-completed { background: #e8f5e9; color: #4caf50; }
+        .status-paused { background: #fff3e0; color: #ff9800; }
+        .project-info { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 15px; }
+        .info-item { font-size: 13px; }
+        .info-item label { color: #999; display: block; margin-bottom: 3px; }
+        .info-item span { color: #333; }
+        .project-progress { margin-top: 15px; }
+        .progress-bar { height: 6px; background: #eee; border-radius: 3px; overflow: hidden; }
+        .progress-bar .progress { height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 3px; }
+        .progress-text { display: flex; justify-content: space-between; margin-top: 8px; font-size: 12px; color: #666; }
+        .pagination { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 30px; }
+        .pagination button { padding: 8px 15px; border: 1px solid #ddd; background: white; border-radius: 6px; cursor: pointer; }
+        .pagination button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .pagination span { color: #666; font-size: 14px; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; }
+        .modal.show { display: flex; }
+        .modal-content { background: white; border-radius: 12px; width: 600px; max-width: 90%; max-height: 90vh; overflow-y: auto; }
+        .modal-header { padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .modal-header h3 { margin: 0; font-size: 18px; }
+        .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #999; }
+        .modal-body { padding: 20px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; color: #666; font-size: 14px; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+        .form-group textarea { min-height: 80px; resize: vertical; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .modal-footer { padding: 15px 20px; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 10px; }
+        .btn-secondary { padding: 10px 20px; background: #f5f5f5; color: #333; border: none; border-radius: 8px; cursor: pointer; }
+        .empty-state { text-align: center; padding: 60px 20px; color: #999; }
+        .empty-state i { font-size: 64px; margin-bottom: 20px; opacity: 0.5; }
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .main-content { margin-left: 0; }
+            .project-grid { grid-template-columns: 1fr; }
+            .form-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h3>项目管理平台</h3>
+            <p>数学院课题管理系统</p>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="index.html"><i class="bi bi-house"></i> 工作台</a></li>
+            <li><a href="projects.html" class="active"><i class="bi bi-folder"></i> 项目管理</a></li>
+            <li><a href="tasks.html"><i class="bi bi-check-square"></i> 任务管理</a></li>
+            <li><a href="meetings.html"><i class="bi bi-calendar-event"></i> 会议中心</a></li>
+            <li><a href="minutes.html"><i class="bi bi-file-text"></i> 会议纪要</a></li>
+            <li><a href="notifications.html"><i class="bi bi-bell"></i> 提醒中心</a></li>
+            <li><a href="members.html"><i class="bi bi-people"></i> 成员管理</a></li>
+            <li><a href="settings.html"><i class="bi bi-gear"></i> 系统设置</a></li>
+        </ul>
+    </div>
+    <div class="main-content">
+        <div class="header">
+            <h2>项目管理</h2>
+            <div class="user-info">
+                <span id="userName">加载中...</span>
+                <button class="btn-logout" onclick="logout()">退出登录</button>
+            </div>
+        </div>
+        <div class="toolbar">
+            <div class="search-box">
+                <input type="text" id="searchKeyword" placeholder="搜索项目名称/编号">
+                <select id="filterStatus" onchange="applyFilters()">
+                    <option value="">全部状态</option>
+                    <option value="not_started">未开始</option>
+                    <option value="in_progress">进行中</option>
+                    <option value="completed">已完成</option>
+                    <option value="paused">已暂停</option>
+                </select>
+                <button class="btn-primary" onclick="applyFilters()">搜索</button>
+            </div>
+            <button class="btn-primary" onclick="showCreateModal()"><i class="bi bi-plus"></i> 新建项目</button>
+        </div>
+        <div class="project-grid" id="projectGrid"></div>
+        <div class="pagination" id="pagination" style="display: none;">
+            <button onclick="prevPage()">上一页</button>
+            <span id="pageInfo"></span>
+            <button onclick="nextPage()">下一页</button>
+        </div>
+    </div>
+        <div class="modal" id="createModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">新建项目</h3>
+                <button class="modal-close" onclick="hideCreateModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="createForm">
+                    <div class="form-group">
+                        <label>项目名称 *</label>
+                        <input type="text" id="projectName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>项目编号 *</label>
+                        <input type="text" id="projectCode" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>开始时间</label>
+                            <input type="date" id="startDate">
+                        </div>
+                        <div class="form-group">
+                            <label>结束时间</label>
+                            <input type="date" id="endDate">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>项目经理</label>
+                            <select id="projectManager"></select>
+                        </div>
+                        <div class="form-group">
+                            <label>项目负责人</label>
+                            <select id="projectOwner"></select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>项目状态</label>
+                            <select id="projectStatus">
+                                <option value="not_started">未开始</option>
+                                <option value="in_progress">进行中</option>
+                                <option value="completed">已完成</option>
+                                <option value="paused">已暂停</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>项目类型</label>
+                        <input type="text" id="projectType" placeholder="如：课题研究、横向项目等">
+                    </div>
+                    <div class="form-group">
+                        <label>项目目标</label>
+                        <textarea id="projectObjective"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>项目背景</label>
+                        <textarea id="projectBackground"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>项目描述</label>
+                        <textarea id="projectDescription"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="hideCreateModal()">取消</button>
+                <button class="btn-primary" id="saveProjectBtn" onclick="saveProject()">创建</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        let currentUser = null;
+        let currentPage = 1;
+        let pageSize = 12;
+        let totalItems = 0;
+        let users = [];
+        let projectListData = [];
+        let editingId = null;
+        function normalizeCurrentUser(user) {
+            if (!user) return user;
+            if (user.role === 'manager') user.role = user.username === 'admin' ? 'admin' : 'project_manager';
+            if (user.role === 'leader') user.role = 'project_owner';
+            if (user.role === 'observer') user.role = 'member';
+            return user;
+        }
+        function isAdmin() {
+            return currentUser && currentUser.role === 'admin';
+        }
+        function canEditProject(project) {
+            if (!project || !currentUser) return false;
+            if (isAdmin()) return true;
+            return [project.manager_id, project.owner_id].includes(currentUser.id);
+        }
+        function getRoleLabel(role) {
+            const roleMap = {
+                admin: '管理员',
+                project_manager: '项目经理',
+                project_owner: '项目负责人',
+                member: '成员'
+            };
+            return roleMap[role] || role;
+        }
+        function getSelectableUsers(roleType) {
+            return users;
+        }
+        function checkAuth() {
+            const userStr = localStorage.getItem('user');
+            if (!userStr) { window.location.href = 'login.html'; return false; }
+            currentUser = normalizeCurrentUser(JSON.parse(userStr));
+            document.getElementById('userName').textContent = currentUser.name;
+            const createBtn = document.querySelector('.toolbar > .btn-primary');
+            if (createBtn) createBtn.style.display = isAdmin() ? 'inline-flex' : 'none';
+            return true;
+        }
+        function logout() { localStorage.removeItem('user'); window.location.href = 'login.html'; }
+        async function loadUsers() {
+            try {
+                const response = await fetch('/api/users');
+                const result = await response.json();
+                if (result.success) {
+                    users = result.data;
+                    const managerSelect = document.getElementById('projectManager');
+                    const ownerSelect = document.getElementById('projectOwner');
+                    managerSelect.innerHTML = '<option value="">请选择</option>' + getSelectableUsers('manager').map(u => `<option value="${u.id}">${u.name}（${getRoleLabel(u.role)}）</option>`).join('');
+                    ownerSelect.innerHTML = '<option value="">请选择</option>' + getSelectableUsers('owner').map(u => `<option value="${u.id}">${u.name}（${getRoleLabel(u.role)}）</option>`).join('');
+                }
+            } catch (error) { console.error('加载用户失败:', error); }
+        }
+        async function loadProjects() {
+            const keyword = document.getElementById('searchKeyword').value;
+            const status = document.getElementById('filterStatus').value;
+            try {
+                let url = `/api/projects?page=${currentPage}&size=${pageSize}&user_id=${currentUser.id}`;
+                if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
+                if (status) url += `&status=${status}`;
+                const response = await fetch(url);
+                const result = await response.json();
+                if (result.success) {
+                    projectListData = result.data.list;
+                    totalItems = result.data.total;
+                    renderProjects(projectListData);
+                    renderPagination();
+                }
+            } catch (error) { console.error('加载项目失败:', error); }
+        }
+        function applyFilters() {
+            currentPage = 1;
+            loadProjects();
+        }
+        function renderProjects(projects) {
+            const container = document.getElementById('projectGrid');
+            if (!projects || projects.length === 0) {
+                container.innerHTML = '<div class="empty-state"><i class="bi bi-folder"></i><p>暂无项目数据</p></div>';
+                return;
+            }
+            container.innerHTML = projects.map(p => {
+                const progress = p.task_count > 0 ? Math.round(p.completed_task_count / p.task_count * 100) : 0;
+                const statusMap = { 'not_started': '未开始', 'in_progress': '进行中', 'completed': '已完成', 'paused': '已暂停' };
+                return `
+                    <div class="project-card" onclick="location.href='project_detail.html?id=${p.id}'">
+                        <div class="project-header">
+                            <div>
+                                <div class="project-title">${p.name}</div>
+                                <div class="project-code">${p.code}</div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span class="status-badge status-${p.status}">${statusMap[p.status] || p.status}</span>
+                                ${canEditProject(p) ? `<button class="btn-secondary" style="padding: 6px 10px; font-size: 12px;" onclick="editProject(${p.id}, event)">编辑</button>` : ''}
+                            </div>
+                        </div>
+                        <div class="project-info">
+                            <div class="info-item"><label>项目经理</label><span>${p.project_manager_name || p.manager_name || '-'}</span></div>
+                            <div class="info-item"><label>项目负责人</label><span>${p.project_owner_name || p.owner_name || '-'}</span></div>
+                            <div class="info-item"><label>成员数</label><span>${p.member_count}人</span></div>
+                            <div class="info-item"><label>里程碑</label><span>${p.completed_milestone_count}/${p.milestone_count}</span></div>
+                            <div class="info-item"><label>创建时间</label><span>${p.created_at ? p.created_at.split(' ')[0] : '-'}</span></div>
+                        </div>
+                        <div class="project-progress">
+                            <div class="progress-bar"><div class="progress" style="width: ${progress}%"></div></div>
+                            <div class="progress-text"><span>任务完成进度</span><span>${progress}%</span></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        function renderPagination() {
+            const totalPages = Math.ceil(totalItems / pageSize);
+            const pagination = document.getElementById('pagination');
+            if (totalPages <= 1) { pagination.style.display = 'none'; return; }
+            pagination.style.display = 'flex';
+            document.getElementById('pageInfo').textContent = `第 ${currentPage} / ${totalPages} 页`;
+        }
+        function prevPage() { if (currentPage > 1) { currentPage--; loadProjects(); } }
+        function nextPage() { const totalPages = Math.ceil(totalItems / pageSize); if (currentPage < totalPages) { currentPage++; loadProjects(); } }
+        function showCreateModal() {
+            if (!isAdmin()) { alert('只有管理员可以新建项目'); return; }
+            editingId = null;
+            document.getElementById('modalTitle').textContent = '新建项目';
+            document.getElementById('saveProjectBtn').textContent = '创建';
+            document.getElementById('createForm').reset();
+            document.getElementById('createModal').classList.add('show');
+        }
+        function hideCreateModal() {
+            editingId = null;
+            document.getElementById('createModal').classList.remove('show');
+            document.getElementById('createForm').reset();
+        }
+        function editProject(projectId, event) {
+            event.stopPropagation();
+            const project = projectListData.find(item => item.id === projectId);
+            if (!project) return;
+            if (!canEditProject(project)) { alert('无权编辑该项目'); return; }
+            editingId = projectId;
+            document.getElementById('modalTitle').textContent = '编辑项目';
+            document.getElementById('saveProjectBtn').textContent = '保存';
+            document.getElementById('projectName').value = project.name || '';
+            document.getElementById('projectCode').value = project.code || '';
+            document.getElementById('startDate').value = project.start_date || '';
+            document.getElementById('endDate').value = project.end_date || '';
+            document.getElementById('projectManager').value = project.manager_id || '';
+            document.getElementById('projectOwner').value = project.owner_id || '';
+            document.getElementById('projectStatus').value = project.status || 'not_started';
+            document.getElementById('projectType').value = project.project_type || '';
+            document.getElementById('projectObjective').value = project.objective || '';
+            document.getElementById('projectBackground').value = project.background || '';
+            document.getElementById('projectDescription').value = project.description || '';
+            document.getElementById('createModal').classList.add('show');
+        }
+        async function saveProject() {
+            const data = {
+                name: document.getElementById('projectName').value,
+                code: document.getElementById('projectCode').value,
+                start_date: document.getElementById('startDate').value,
+                end_date: document.getElementById('endDate').value,
+                manager_id: document.getElementById('projectManager').value,
+                owner_id: document.getElementById('projectOwner').value,
+                status: document.getElementById('projectStatus').value,
+                project_type: document.getElementById('projectType').value,
+                objective: document.getElementById('projectObjective').value,
+                background: document.getElementById('projectBackground').value,
+                description: document.getElementById('projectDescription').value
+            };
+            if (!data.name || !data.code) { alert('请填写项目名称和编号'); return; }
+            try {
+                const url = editingId ? `/api/projects/${editingId}` : '/api/projects';
+                const method = editingId ? 'PUT' : 'POST';
+                const response = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json', 'X-User-Id': currentUser.id },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                if (result.success) { hideCreateModal(); loadProjects(); }
+                else { alert(result.message || (editingId ? '保存失败' : '创建失败')); }
+            } catch (error) { alert('网络错误，请稍后重试'); }
+        }
+        window.onload = function() { 
+            if (checkAuth()) { 
+                loadUsers(); 
+                loadProjects();
+                document.getElementById('searchKeyword').addEventListener('keydown', function(event) {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        applyFilters();
+                    }
+                });
+            } 
+        };
+    </script>
+</body>
+</html>

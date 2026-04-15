@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的待办 - 项目管理平台</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Microsoft YaHei', sans-serif; background: #f5f7fa; min-height: 100vh; }
+        .sidebar { position: fixed; left: 0; top: 0; width: 240px; height: 100vh; background: linear-gradient(180deg, #2c3e50 0%, #1a252f 100%); color: white; padding: 20px 0; z-index: 1000; }
+        .sidebar-header { padding: 0 20px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
+        .sidebar-header h3 { font-size: 18px; margin: 0; }
+        .sidebar-header p { font-size: 12px; opacity: 0.6; margin: 5px 0 0; }
+        .nav-menu { list-style: none; padding: 0 10px; }
+        .nav-menu li { margin-bottom: 5px; }
+        .nav-menu a { display: flex; align-items: center; padding: 12px 15px; color: rgba(255,255,255,0.7); text-decoration: none; border-radius: 8px; transition: all 0.3s; }
+        .nav-menu a:hover, .nav-menu a.active { background: rgba(255,255,255,0.1); color: white; }
+        .nav-menu i { margin-right: 10px; font-size: 18px; }
+        .main-content { margin-left: 240px; padding: 20px 30px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: white; padding: 15px 25px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .header h2 { font-size: 20px; color: #333; margin: 0; }
+        .user-info { display: flex; align-items: center; gap: 15px; }
+        .btn-logout { padding: 8px 16px; background: #e74c3c; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; }
+        .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
+        .stat-card { background: white; border-radius: 12px; padding: 20px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); cursor: pointer; transition: transform 0.3s; }
+        .stat-card:hover { transform: translateY(-3px); }
+        .stat-card .number { font-size: 32px; font-weight: bold; margin-bottom: 5px; }
+        .stat-card .label { font-size: 13px; color: #666; }
+        .stat-card.total .number { color: #667eea; }
+        .stat-card.today .number { color: #ff9800; }
+        .stat-card.overdue .number { color: #f44336; }
+        .stat-card.completed .number { color: #4caf50; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab-btn { padding: 10px 20px; background: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; color: #666; transition: all 0.3s; }
+        .tab-btn.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .task-list { background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .task-item { padding: 20px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: flex-start; gap: 15px; }
+        .task-item:last-child { border-bottom: none; }
+        .task-item:hover { background: #f8f9fa; }
+        .task-checkbox { width: 22px; height: 22px; border: 2px solid #ddd; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
+        .task-checkbox:hover { border-color: #667eea; }
+        .task-checkbox.checked { background: #4caf50; border-color: #4caf50; color: white; }
+        .task-content { flex: 1; }
+        .task-title { font-size: 16px; color: #333; margin-bottom: 8px; }
+        .task-title.completed { text-decoration: line-through; color: #999; }
+        .task-meta { display: flex; gap: 20px; font-size: 13px; color: #666; margin-bottom: 10px; }
+        .task-meta span { display: flex; align-items: center; gap: 5px; }
+        .task-meta .overdue { color: #f44336; }
+        .task-tags { display: flex; gap: 8px; }
+        .tag { padding: 3px 8px; border-radius: 4px; font-size: 12px; }
+        .tag-priority-high { background: #ffebee; color: #f44336; }
+        .tag-priority-medium { background: #fff3e0; color: #ff9800; }
+        .tag-priority-low { background: #e8f5e9; color: #4caf50; }
+        .tag-source { background: #e3f2fd; color: #2196f3; }
+        .task-actions { display: flex; gap: 8px; }
+        .btn-action { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .btn-primary { background: #e3f2fd; color: #2196f3; }
+        .btn-success { background: #e8f5e9; color: #4caf50; }
+        .btn-warning { background: #fff3e0; color: #ff9800; }
+        .pagination { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 20px; padding: 15px; }
+        .pagination button { padding: 8px 15px; border: 1px solid #ddd; background: white; border-radius: 6px; cursor: pointer; }
+        .pagination button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .pagination span { color: #666; font-size: 14px; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; }
+        .modal.show { display: flex; }
+        .modal-content { background: white; border-radius: 12px; width: 500px; max-width: 90%; }
+        .modal-header { padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .modal-header h3 { margin: 0; font-size: 18px; }
+        .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #999; }
+        .modal-body { padding: 20px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; color: #666; font-size: 14px; }
+        .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+        .modal-footer { padding: 15px 20px; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 10px; }
+        .btn-secondary { padding: 10px 20px; background: #f5f5f5; color: #333; border: none; border-radius: 8px; cursor: pointer; }
+        .btn-confirm { padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; }
+        .empty-state { text-align: center; padding: 60px 20px; color: #999; }
+        .empty-state i { font-size: 64px; margin-bottom: 20px; opacity: 0.5; }
+        @media (max-width: 768px) { .sidebar { display: none; } .main-content { margin-left: 0; } .stats-row { grid-template-columns: repeat(2, 1fr); } .task-meta { flex-direction: column; gap: 8px; } }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h3>项目管理平台</h3>
+            <p>数学院课题管理系统</p>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="index.html"><i class="bi bi-house"></i> 工作台</a></li>
+            <li><a href="projects.html"><i class="bi bi-folder"></i> 项目管理</a></li>
+            <li><a href="tasks.html"><i class="bi bi-check-square"></i> 任务管理</a></li>
+            <li><a href="meetings.html"><i class="bi bi-calendar-event"></i> 会议中心</a></li>
+            <li><a href="minutes.html"><i class="bi bi-file-text"></i> 会议纪要</a></li>
+            <li><a href="notifications.html"><i class="bi bi-bell"></i> 提醒中心</a></li>
+            <li><a href="members.html"><i class="bi bi-people"></i> 成员管理</a></li>
+            <li><a href="settings.html"><i class="bi bi-gear"></i> 系统设置</a></li>
+        </ul>
+    </div>
+    <div class="main-content">
+        <div class="header">
+            <h2>我的待办</h2>
+            <div class="user-info">
+                <span id="userName">加载中...</span>
+                <button class="btn-logout" onclick="logout()">退出登录</button>
+            </div>
+        </div>
+        <div class="stats-row">
+            <div class="stat-card total" onclick="filterByStatus('')">
+                <div class="number" id="totalCount">0</div>
+                <div class="label">全部待办</div>
+            </div>
+            <div class="stat-card today" onclick="filterByStatus('today')">
+                <div class="number" id="todayCount">0</div>
+                <div class="label">今日到期</div>
+            </div>
+            <div class="stat-card overdue" onclick="filterByStatus('overdue')">
+                <div class="number" id="overdueCount">0</div>
+                <div class="label">已逾期</div>
+            </div>
+            <div class="stat-card completed" onclick="filterByStatus('completed')">
+                <div class="number" id="completedCount">0</div>
+                <div class="label">已完成</div>
+            </div>
+        </div>
+        <div class="tabs">
+            <button class="tab-btn active" data-filter="">全部</button>
+            <button class="tab-btn" data-filter="not_started">未开始</button>
+            <button class="tab-btn" data-filter="in_progress">进行中</button>
+            <button class="tab-btn" data-filter="completed">已完成</button>
+        </div>
+        <div class="task-list" id="taskList"></div>
+        <div class="pagination" id="pagination" style="display: none;">
+            <button onclick="prevPage()">上一页</button>
+            <span id="pageInfo"></span>
+            <button onclick="nextPage()">下一页</button>
+        </div>
+    </div>
+    <div class="modal" id="updateModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>更新任务状态</h3>
+                <button class="modal-close" onclick="hideModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="updateTaskId">
+                <div class="form-group">
+                    <label>任务状态</label>
+                    <select id="updateStatus">
+                        <option value="not_started">未开始</option>
+                        <option value="in_progress">进行中</option>
+                        <option value="completed">已完成</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>完成说明</label>
+                    <textarea id="updateNote" placeholder="请输入完成说明或进度备注..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="hideModal()">取消</button>
+                <button class="btn-confirm" onclick="updateTask()">确认</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        let currentUser = null;
+        let currentPage = 1;
+        let pageSize = 15;
+        let totalItems = 0;
+        let currentFilter = '';
+        let tasks = [];
+        function checkAuth() {
+            const userStr = localStorage.getItem('user');
+            if (!userStr) { window.location.href = 'login.html'; return false; }
+            currentUser = JSON.parse(userStr);
+            document.getElementById('userName').textContent = currentUser.name;
+            return true;
+        }
+        function logout() { localStorage.removeItem('user'); window.location.href = 'login.html'; }
+        async function loadTasks() {
+            try {
+                let url = `/api/tasks?page=${currentPage}&size=${pageSize}&manager_id=${currentUser.id}`;
+                if (currentFilter && currentFilter !== 'today' && currentFilter !== 'overdue') {
+                    url += `&status=${currentFilter}`;
+                }
+                const response = await fetch(url);
+                const result = await response.json();
+                if (result.success) {
+                    tasks = result.data.list;
+                    totalItems = result.data.total;
+                    renderTasks();
+                    renderPagination();
+                    updateStats();
+                }
+            } catch (error) { console.error('加载任务失败:', error); }
+        }
+        function updateStats() {
+            const today = new Date().toISOString().split('T')[0];
+            let todayCount = 0, overdueCount = 0, completedCount = 0;
+            tasks.forEach(t => {
+                if (t.status === 'completed') completedCount++;
+                else if (t.status === 'overdue') overdueCount++;
+                if (t.due_date === today && t.status !== 'completed' && t.status !== 'overdue') todayCount++;
+            });
+            document.getElementById('totalCount').textContent = totalItems;
+            document.getElementById('todayCount').textContent = todayCount;
+            document.getElementById('overdueCount').textContent = overdueCount;
+            document.getElementById('completedCount').textContent = completedCount;
+        }
+        function renderTasks() {
+            const container = document.getElementById('taskList');
+            const today = new Date().toISOString().split('T')[0];
+            let filteredTasks = tasks;
+            if (currentFilter === 'today') {
+                filteredTasks = tasks.filter(t => t.due_date === today && t.status !== 'completed' && t.status !== 'overdue');
+            } else if (currentFilter === 'overdue') {
+                filteredTasks = tasks.filter(t => t.status === 'overdue');
+            } else if (currentFilter === 'completed') {
+                filteredTasks = tasks.filter(t => t.status === 'completed');
+            }
+            if (!filteredTasks || filteredTasks.length === 0) {
+                container.innerHTML = '<div class="empty-state"><i class="bi bi-check-circle"></i><p>暂无待办任务</p></div>';
+                return;
+            }
+            const statusMap = { 'not_started': '未开始', 'in_progress': '进行中', 'completed': '已完成', 'overdue': '已逾期' };
+            const priorityMap = { 'high': '高', 'medium': '中', 'low': '低' };
+            const sourceMap = { 'manual': '手工创建', 'minutes': '会议纪要', 'system': '系统生成' };
+            container.innerHTML = filteredTasks.map(t => {
+                const isOverdue = t.status === 'overdue';
+                return `
+                <div class="task-item">
+                    <div class="task-checkbox ${t.status === 'completed' ? 'checked' : ''}" onclick="toggleComplete(${t.id}, '${t.status}')">
+                        ${t.status === 'completed' ? '<i class="bi bi-check"></i>' : ''}
+                    </div>
+                    <div class="task-content">
+                        <div class="task-title ${t.status === 'completed' ? 'completed' : ''}">${t.name}</div>
+                        <div class="task-meta">
+                            <span><i class="bi bi-folder"></i> ${t.project_name || '-'}</span>
+                            <span><i class="bi bi-calendar"></i> ${t.due_date || '无截止日期'}</span>
+                            ${isOverdue ? '<span class="overdue"><i class="bi bi-exclamation-circle"></i> 已逾期</span>' : ''}
+                            ${t.source_meeting_title ? `<span><i class="bi bi-chat"></i> 来源: ${t.source_meeting_title}</span>` : ''}
+                        </div>
+                        <div class="task-tags">
+                            <span class="tag tag-priority-${t.priority}">${priorityMap[t.priority] || t.priority}优先级</span>
+                            <span class="tag tag-source">${sourceMap[t.source] || t.source}</span>
+                        </div>
+                    </div>
+                    <div class="task-actions">
+                        <button class="btn-action btn-primary" onclick="showUpdateModal(${t.id}, '${t.status}')">更新状态</button>
+                        <button class="btn-action btn-success" onclick="viewTask(${t.id})">查看详情</button>
+                    </div>
+                </div>
+            `}).join('');
+        }
+        function renderPagination() {
+            const totalPages = Math.ceil(totalItems / pageSize);
+            const pagination = document.getElementById('pagination');
+            if (totalPages <= 1) { pagination.style.display = 'none'; return; }
+            pagination.style.display = 'flex';
+            document.getElementById('pageInfo').textContent = `第 ${currentPage} / ${totalPages} 页`;
+        }
+        function prevPage() { if (currentPage > 1) { currentPage--; loadTasks(); } }
+        function nextPage() { const totalPages = Math.ceil(totalItems / pageSize); if (currentPage < totalPages) { currentPage++; loadTasks(); } }
+        function filterByStatus(filter) {
+            currentFilter = filter;
+            currentPage = 1;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            loadTasks();
+        }
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentFilter = this.dataset.filter;
+                currentPage = 1;
+                loadTasks();
+            });
+        });
+        function showUpdateModal(taskId, status) {
+            document.getElementById('updateTaskId').value = taskId;
+            document.getElementById('updateStatus').value = status;
+            document.getElementById('updateNote').value = '';
+            document.getElementById('updateModal').classList.add('show');
+        }
+        function hideModal() { document.getElementById('updateModal').classList.remove('show'); }
+        async function updateTask() {
+            const taskId = document.getElementById('updateTaskId').value;
+            const status = document.getElementById('updateStatus').value;
+            try {
+                const response = await fetch(`/api/tasks/${taskId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'X-User-Id': currentUser.id },
+                    body: JSON.stringify({ status })
+                });
+                const result = await response.json();
+                if (result.success) { hideModal(); loadTasks(); }
+                else { alert(result.message || '更新失败'); }
+            } catch (error) { alert('网络错误'); }
+        }
+        async function toggleComplete(taskId, currentStatus) {
+            if (currentStatus === 'completed') {
+                try {
+                    const response = await fetch(`/api/tasks/${taskId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json', 'X-User-Id': currentUser.id },
+                        body: JSON.stringify({ status: 'in_progress' })
+                    });
+                    const result = await response.json();
+                    if (result.success) { loadTasks(); }
+                } catch (error) { console.error('更新失败:', error); }
+            } else {
+                try {
+                    const response = await fetch(`/api/tasks/${taskId}/complete`, { method: 'POST', headers: { 'X-User-Id': currentUser.id } });
+                    const result = await response.json();
+                    if (result.success) { loadTasks(); }
+                } catch (error) { console.error('更新失败:', error); }
+            }
+        }
+        function viewTask(taskId) { window.location.href = `tasks.html?id=${taskId}`; }
+        window.onload = function() { if (checkAuth()) { loadTasks(); } };
+    </script>
+</body>
+</html>

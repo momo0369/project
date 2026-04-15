@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>项目详情 - 项目管理平台</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Microsoft YaHei', sans-serif; background: #f5f7fa; min-height: 100vh; }
+        .sidebar { position: fixed; left: 0; top: 0; width: 240px; height: 100vh; background: linear-gradient(180deg, #2c3e50 0%, #1a252f 100%); color: white; padding: 20px 0; z-index: 1000; }
+        .sidebar-header { padding: 0 20px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
+        .sidebar-header h3 { font-size: 18px; margin: 0; }
+        .sidebar-header p { font-size: 12px; opacity: 0.6; margin: 5px 0 0; }
+        .nav-menu { list-style: none; padding: 0 10px; }
+        .nav-menu li { margin-bottom: 5px; }
+        .nav-menu a { display: flex; align-items: center; padding: 12px 15px; color: rgba(255,255,255,0.7); text-decoration: none; border-radius: 8px; transition: all 0.3s; }
+        .nav-menu a:hover, .nav-menu a.active { background: rgba(255,255,255,0.1); color: white; }
+        .nav-menu i { margin-right: 10px; font-size: 18px; }
+        .main-content { margin-left: 240px; padding: 20px 30px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: white; padding: 15px 25px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .header h2 { font-size: 20px; color: #333; margin: 0; display: flex; align-items: center; gap: 10px; }
+        .header .back-btn { color: #667eea; text-decoration: none; font-size: 14px; }
+        .user-info { display: flex; align-items: center; gap: 15px; }
+        .btn-logout { padding: 8px 16px; background: #e74c3c; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; }
+        .project-header { background: white; border-radius: 12px; padding: 25px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .project-title-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+        .project-title { font-size: 24px; font-weight: bold; color: #333; }
+        .project-code { font-size: 14px; color: #999; margin-top: 5px; }
+        .status-badge { padding: 6px 15px; border-radius: 20px; font-size: 14px; }
+        .status-not_started { background: #f5f5f5; color: #999; }
+        .status-in_progress { background: #e3f2fd; color: #2196f3; }
+        .status-completed { background: #e8f5e9; color: #4caf50; }
+        .status-paused { background: #fff3e0; color: #ff9800; }
+        .project-meta { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+        .meta-item { font-size: 14px; }
+        .meta-item label { color: #999; display: block; margin-bottom: 5px; }
+        .meta-item span { color: #333; }
+        .timeline-panel { background: white; border-radius: 12px; padding: 20px 25px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .timeline-panel h4 { font-size: 16px; color: #333; margin: 0 0 15px; }
+        .timeline-wrapper { overflow-x: auto; }
+        .timeline-body { position: relative; min-width: 900px; }
+        .timeline-scale { position: relative; min-width: 720px; padding-left: 180px; margin-bottom: 10px; }
+        .timeline-scale-track { position: relative; height: 32px; border-bottom: 1px solid #eee; }
+        .timeline-scale-label { position: absolute; top: 0; transform: translateX(-50%); font-size: 12px; color: #999; white-space: nowrap; }
+        .gantt-row { display: flex; align-items: flex-start; min-width: 900px; margin-bottom: 14px; }
+        .gantt-row:last-child { margin-bottom: 0; }
+        .gantt-label { width: 180px; padding-right: 15px; font-size: 13px; color: #333; }
+        .gantt-track { flex: 1; position: relative; min-height: 64px; background: linear-gradient(90deg, rgba(102,126,234,0.06) 1px, transparent 1px); background-size: 12.5% 100%; border-radius: 8px; overflow: visible; }
+        .gantt-today-line { position: absolute; top: 0; bottom: 0; width: 2px; background: #f44336; z-index: 1; opacity: 0.9; display: none; }
+        .gantt-today-line .today-label { position: absolute; top: 0; left: 50%; transform: translate(-50%, -100%); font-size: 11px; color: #f44336; white-space: nowrap; background: white; padding: 0 4px; }
+        .gantt-bar { position: absolute; top: 8px; min-height: 36px; border-radius: 14px; min-width: 160px; display: flex; align-items: center; justify-content: flex-start; color: white; font-size: 12px; padding: 8px 12px; white-space: normal; overflow: visible; text-overflow: unset; word-break: break-word; line-height: 1.35; box-shadow: 0 4px 12px rgba(66, 165, 245, 0.2); cursor: pointer; z-index: 2; }
+        .gantt-bar.not_started { background: #90a4ae; }
+        .gantt-bar.in_progress { background: #42a5f5; }
+        .gantt-bar.completed { background: #66bb6a; }
+        .gantt-bar.delayed { background: #ef5350; }
+        .gantt-date-note { margin-top: 4px; font-size: 11px; color: #999; }
+        .stats-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 20px; }
+        .stat-card { background: white; border-radius: 12px; padding: 20px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .stat-card .number { font-size: 28px; font-weight: bold; color: #667eea; margin-bottom: 5px; }
+        .stat-card .label { font-size: 13px; color: #666; }
+        .stat-card.warning .number { color: #f44336; }
+        .tabs { display: flex; background: white; border-radius: 12px 12px 0 0; margin-bottom: 0; padding: 0 20px; }
+        .tab-item { padding: 15px 25px; color: #666; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.3s; }
+        .tab-item:hover { color: #667eea; }
+        .tab-item.active { color: #667eea; border-bottom-color: #667eea; }
+        .tab-content { background: white; border-radius: 0 0 12px 12px; padding: 20px; min-height: 300px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
+        .info-section { margin-bottom: 20px; }
+        .info-section h4 { font-size: 16px; color: #333; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
+        .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+        .info-item { font-size: 14px; }
+        .info-item label { color: #999; display: inline-block; width: 80px; }
+        .info-item span { color: #333; }
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table th, .data-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
+        .data-table th { background: #f8f9fa; color: #666; font-weight: normal; }
+        .data-table tr:hover { background: #f8f9fa; }
+        .status-tag { padding: 3px 8px; border-radius: 4px; font-size: 12px; }
+        .tag-not_started { background: #f5f5f5; color: #999; }
+        .tag-in_progress { background: #e3f2fd; color: #2196f3; }
+        .tag-completed { background: #e8f5e9; color: #4caf50; }
+        .tag-overdue { background: #ffebee; color: #f44336; }
+        .member-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
+        .member-card { display: flex; align-items: center; gap: 12px; padding: 15px; background: #f8f9fa; border-radius: 8px; }
+        .member-avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; }
+        .member-info { flex: 1; }
+        .member-name { font-size: 14px; color: #333; }
+        .member-role { font-size: 12px; color: #999; }
+        .btn-action { padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; margin-right: 5px; }
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .btn-secondary { background: #f5f5f5; color: #666; }
+        .btn-danger { background: #ffebee; color: #f44336; }
+        .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .empty-state { text-align: center; padding: 40px 20px; color: #999; }
+        .empty-state i { font-size: 48px; margin-bottom: 15px; opacity: 0.5; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; }
+        .modal.show { display: flex; align-items: center; justify-content: center; }
+        .modal-content { background: white; border-radius: 12px; width: 400px; max-width: 90%; }
+        .modal-content.wide { width: 600px; max-height: 90vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid #eee; }
+        .modal-header h3 { margin: 0; font-size: 18px; }
+        .modal-header .close { font-size: 24px; cursor: pointer; color: #999; }
+        .modal-body { padding: 20px; }
+        .modal-footer { padding: 15px 20px; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 10px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-size: 14px; color: #333; }
+        .form-group select, .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+        .form-group textarea { min-height: 80px; resize: vertical; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .form-checkbox { display: flex; align-items: center; gap: 8px; }
+        .form-checkbox input { width: auto; }
+        @media (max-width: 1200px) { .stats-row { grid-template-columns: repeat(3, 1fr); } .project-meta { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 768px) { .sidebar { display: none; } .main-content { margin-left: 0; } .stats-row { grid-template-columns: repeat(2, 1fr); } .project-meta { grid-template-columns: 1fr; } .info-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h3>项目管理平台</h3>
+            <p>数学院课题管理系统</p>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="index.html"><i class="bi bi-house"></i> 工作台</a></li>
+            <li><a href="projects.html" class="active"><i class="bi bi-folder"></i> 项目管理</a></li>
+            <li><a href="tasks.html"><i class="bi bi-check-square"></i> 任务管理</a></li>
+            <li><a href="meetings.html"><i class="bi bi-calendar-event"></i> 会议中心</a></li>
+            <li><a href="minutes.html"><i class="bi bi-file-text"></i> 会议纪要</a></li>
+            <li><a href="notifications.html"><i class="bi bi-bell"></i> 提醒中心</a></li>
+            <li><a href="members.html"><i class="bi bi-people"></i> 成员管理</a></li>
+            <li><a href="settings.html"><i class="bi bi-gear"></i> 系统设置</a></li>
+        </ul>
+    </div>
+    <div class="main-content">
+        <div class="header">
+            <h2><a href="projects.html" class="back-btn"><i class="bi bi-arrow-left"></i></a> <span id="pageTitle">项目详情</span></h2>
+            <div class="user-info">
+                <span id="userName">加载中...</span>
+                <button class="btn-logout" onclick="logout()">退出登录</button>
+            </div>
+        </div>
+        <div class="project-header" id="projectHeader">
+            <div class="project-title-row">
+                <div>
+                    <div class="project-title" id="projectName">加载中...</div>
+                    <div class="project-code" id="projectCode"></div>
+                </div>
+                <span class="status-badge" id="projectStatus"></span>
+            </div>
+            <div class="project-meta" id="projectMeta"></div>
+        </div>
+        <div class="timeline-panel">
+            <h4>里程碑时间线</h4>
+            <div class="timeline-wrapper" id="milestoneGantt"></div>
+        </div>
+        <div class="stats-row" id="statsRow"></div>
+        <div class="tabs">
+            <div class="tab-item active" data-tab="overview">概览</div>
+            <div class="tab-item" data-tab="milestones">里程碑</div>
+            <div class="tab-item" data-tab="tasks">任务</div>
+            <div class="tab-item" data-tab="meetings">会议</div>
+            <div class="tab-item" data-tab="members">成员</div>
+        </div>
+        <div class="tab-content">
+            <div class="tab-pane active" id="overview">
+                <div class="info-section">
+                    <h4>基本信息</h4>
+                    <div class="info-grid" id="basicInfo"></div>
+                </div>
+                <div class="info-section">
+                    <h4>项目描述</h4>
+                    <p id="projectDescription" style="color: #666; line-height: 1.8;"></p>
+                </div>
+            </div>
+            <div class="tab-pane" id="milestones">
+                <div class="toolbar">
+                    <span>里程碑列表</span>
+                    <button class="btn-action btn-primary" onclick="location.href='milestones.html?project_id=' + projectId">管理里程碑</button>
+                </div>
+                <table class="data-table">
+                    <thead><tr><th>名称</th><th>计划日期</th><th>状态</th><th>关联任务</th><th>负责人</th></tr></thead>
+                    <tbody id="milestoneList"></tbody>
+                </table>
+            </div>
+            <div class="tab-pane" id="tasks">
+                <div class="toolbar">
+                    <span>任务列表</span>
+                    <button class="btn-action btn-primary" onclick="location.href='tasks.html?project_id=' + projectId">管理任务</button>
+                </div>
+                <table class="data-table">
+                    <thead><tr><th>任务名称</th><th>负责人</th><th>截止日期</th><th>优先级</th><th>状态</th><th>操作</th></tr></thead>
+                    <tbody id="taskList"></tbody>
+                </table>
+            </div>
+            <div class="tab-pane" id="meetings">
+                <div class="toolbar">
+                    <span>会议列表</span>
+                    <button class="btn-action btn-primary" onclick="location.href='meetings.html?project_id=' + projectId">管理会议</button>
+                </div>
+                <table class="data-table">
+                    <thead><tr><th>会议主题</th><th>时间</th><th>组织者</th><th>状态</th><th>纪要</th></tr></thead>
+                    <tbody id="meetingList"></tbody>
+                </table>
+            </div>
+            <div class="tab-pane" id="members">
+                <div class="toolbar">
+                    <span>项目成员</span>
+                    <button class="btn-action btn-primary" onclick="showAddMemberModal()">添加成员</button>
+                </div>
+                <div class="member-list" id="memberList"></div>
+            </div>
+        </div>
+    </div>
+    <div class="modal" id="addMemberModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>添加成员</h3>
+                <span class="close" onclick="hideAddMemberModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>选择用户</label>
+                    <select id="memberUserSelect">
+                        <option value="">请选择用户</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>项目角色</label>
+                    <select id="memberRoleSelect">
+                        <option value="member">成员</option>
+                        <option value="project_manager">项目经理</option>
+                        <option value="project_owner">项目负责人</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-action" onclick="hideAddMemberModal()">取消</button>
+                <button class="btn-action btn-primary" onclick="addMember()">添加</button>
+            </div>
+        </div>
+    </div>
+    <div class="modal" id="milestoneModal">
+        <div class="modal-content wide">
+            <div class="modal-header">
+                <h3>编辑里程碑</h3>
+                <span class="close" onclick="hideMilestoneModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editMilestoneId">
+                <input type="hidden" id="editMilestoneProjectId">
+                <div class="form-group">
+                    <label>所属项目</label>
+                    <input type="text" id="editMilestoneProject" readonly>
+                </div>
+                <div class="form-group">
+                    <label>里程碑名称</label>
+                    <input type="text" id="editMilestoneName">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>计划完成日期</label>
+                        <input type="date" id="editMilestonePlannedDate">
+                    </div>
+                    <div class="form-group">
+                        <label>实际完成日期</label>
+                        <input type="date" id="editMilestoneActualDate">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>负责人</label>
+                        <select id="editMilestoneManager"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>状态</label>
+                        <select id="editMilestoneStatus">
+                            <option value="not_started">未开始</option>
+                            <option value="in_progress">进行中</option>
+                            <option value="completed">已完成</option>
+                            <option value="delayed">延期</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>里程碑目标</label>
+                    <textarea id="editMilestoneObjective"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>描述</label>
+                    <textarea id="editMilestoneDescription"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-checkbox">
+                        <input type="checkbox" id="editMilestoneNeedMeeting" onchange="toggleMilestoneMeetingFields()">
+                        需要阶段评审会议
+                    </label>
+                </div>
+                <div id="editMilestoneMeetingFields" style="display: none;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>预计会议时间</label>
+                            <input type="date" id="editMilestoneExpectedMeetingDate">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>参会角色建议</label>
+                        <input type="text" id="editMilestoneParticipants" placeholder="如：项目经理、技术负责人、测试负责人">
+                    </div>
+                    <div class="form-group">
+                        <label>会议目标建议</label>
+                        <textarea id="editMilestoneMeetingObjective"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-action" onclick="hideMilestoneModal()">取消</button>
+                <button class="btn-action btn-primary" onclick="saveMilestoneDetail()">保存</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        let currentUser = null;
+        let projectId = null;
+        let projectData = null;
+        let allUsers = [];
+        function normalizeCurrentUser(user) {
+            if (!user) return user;
+            if (user.role === 'manager') user.role = user.username === 'admin' ? 'admin' : 'project_manager';
+            if (user.role === 'leader') user.role = 'project_owner';
+            if (user.role === 'observer') user.role = 'member';
+            return user;
+        }
+        function checkAuth() {
+            const userStr = localStorage.getItem('user');
+            if (!userStr) { window.location.href = 'login.html'; return false; }
+            currentUser = normalizeCurrentUser(JSON.parse(userStr));
+            document.getElementById('userName').textContent = currentUser.name;
+            return true;
+        }
+        function logout() { localStorage.removeItem('user'); window.location.href = 'login.html'; }
+        function getProjectId() {
+            const params = new URLSearchParams(window.location.search);
+            projectId = params.get('id');
+            if (!projectId) { window.location.href = 'projects.html'; return false; }
+            return true;
+        }
+        async function loadProject() {
+            try {
+                const response = await fetch(`/api/projects/${projectId}?user_id=${currentUser.id}`);
+                const result = await response.json();
+                if (result.success) {
+                    projectData = result.data;
+                    renderProject();
+                } else { alert(result.message || '项目不存在'); window.location.href = 'projects.html'; }
+            } catch (error) { console.error('加载项目失败:', error); }
+        }
+        function renderProject() {
+            const statusMap = { 'not_started': '未开始', 'in_progress': '进行中', 'completed': '已完成', 'paused': '已暂停' };
+            document.getElementById('pageTitle').textContent = projectData.name;
+            document.getElementById('projectName').textContent = projectData.name;
+            document.getElementById('projectCode').textContent = '编号: ' + projectData.code;
+            const statusEl = document.getElementById('projectStatus');
+            statusEl.textContent = statusMap[projectData.status] || projectData.status;
+            statusEl.className = 'status-badge status-' + projectData.status;
+            document.getElementById('projectMeta').innerHTML = `
+                <div class="meta-item"><label>项目经理</label><span>${projectData.project_manager_name || projectData.manager_name || '-'}</span></div>
+                <div class="meta-item"><label>项目负责人</label><span>${projectData.project_owner_name || projectData.owner_name || '-'}</span></div>
+                <div class="meta-item"><label>开始时间</label><span>${projectData.start_date || '-'}</span></div>
+                <div class="meta-item"><label>结束时间</label><span>${projectData.end_date || '-'}</span></div>
+                <div class="meta-item"><label>项目类型</label><span>${projectData.project_type || '-'}</span></div>
+            `;
+            const stats = projectData.statistics;
+            document.getElementById('statsRow').innerHTML = `
+                <div class="stat-card"><div class="number">${stats.total_tasks}</div><div class="label">总任务</div></div>
+                <div class="stat-card"><div class="number">${stats.completed_tasks}</div><div class="label">已完成</div></div>
+                <div class="stat-card warning"><div class="number">${stats.overdue_tasks}</div><div class="label">逾期任务</div></div>
+                <div class="stat-card"><div class="number">${stats.total_milestones}</div><div class="label">里程碑</div></div>
+                <div class="stat-card"><div class="number">${stats.member_count}</div><div class="label">成员数</div></div>
+            `;
+            document.getElementById('basicInfo').innerHTML = `
+                <div class="info-item"><label>项目目标</label><span>${projectData.objective || '-'}</span></div>
+                <div class="info-item"><label>项目背景</label><span>${projectData.background || '-'}</span></div>
+                <div class="info-item"><label>项目经理</label><span>${projectData.project_manager_name || projectData.manager_name || '-'}</span></div>
+                <div class="info-item"><label>项目负责人</label><span>${projectData.project_owner_name || projectData.owner_name || '-'}</span></div>
+                <div class="info-item"><label>创建时间</label><span>${projectData.created_at || '-'}</span></div>
+                <div class="info-item"><label>更新时间</label><span>${projectData.updated_at || '-'}</span></div>
+            `;
+            document.getElementById('projectDescription').textContent = projectData.description || '暂无描述';
+            renderMilestoneGantt();
+            renderMilestones();
+            renderTasks();
+            renderMeetings();
+            renderMembers();
+        }
+        function renderMilestoneGantt() {
+            const container = document.getElementById('milestoneGantt');
+            const milestones = (projectData.milestones || []).filter(m => m.planned_date || m.actual_date);
+            if (milestones.length === 0) {
+                container.innerHTML = '<div class="empty-state"><i class="bi bi-bar-chart-steps"></i><p>暂无可展示时间线的里程碑</p></div>';
+                return;
+            }
+            const toDate = value => value ? new Date(`${value}T00:00:00`) : null;
+            const addDays = (date, days) => new Date(date.getTime() + days * 24 * 60 * 60 * 1000);
+            const rangeCandidates = [
+                toDate(projectData.start_date),
+                toDate(projectData.end_date),
+                ...milestones.flatMap(item => [toDate(item.planned_date), toDate(item.actual_date)]).filter(Boolean)
+            ].filter(Boolean);
+            const rangeStart = new Date(Math.min(...rangeCandidates.map(date => date.getTime())));
+            const rangeEnd = new Date(Math.max(...rangeCandidates.map(date => date.getTime())));
+            const safeStart = addDays(rangeStart, -2);
+            const safeEnd = addDays(rangeEnd, 2);
+            const totalDays = Math.max(1, Math.round((safeEnd - safeStart) / (24 * 60 * 60 * 1000)));
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const formatDate = date => `${date.getMonth() + 1}/${date.getDate()}`;
+            const scaleLabels = Array.from({ length: 5 }, (_, index) => {
+                const ratio = index / 4;
+                const labelDate = addDays(safeStart, Math.round(totalDays * ratio));
+                return `<span class="timeline-scale-label" style="left: ${ratio * 100}%;">${formatDate(labelDate)}</span>`;
+            }).join('');
+            const rows = milestones.map(milestone => {
+                const plannedDate = toDate(milestone.planned_date) || safeStart;
+                const actualDate = toDate(milestone.actual_date) || plannedDate;
+                const barStartDate = plannedDate < actualDate ? plannedDate : actualDate;
+                const barEndDate = plannedDate > actualDate ? plannedDate : actualDate;
+                const left = ((barStartDate - safeStart) / (24 * 60 * 60 * 1000)) / totalDays * 100;
+                const width = Math.max((((barEndDate - barStartDate) / (24 * 60 * 60 * 1000)) + 1) / totalDays * 100, 2.5);
+                return `
+                    <div class="gantt-row">
+                        <div class="gantt-label">
+                            <div>${milestone.name}</div>
+                            <div class="gantt-date-note">计划 ${milestone.planned_date || '-'} / 实际 ${milestone.actual_date || '-'}</div>
+                        </div>
+                        <div class="gantt-track">
+                            <div class="gantt-bar ${milestone.status}" style="left: ${left}%; width: ${width}%;" onclick="showMilestoneModal(${milestone.id}, event)">${milestone.name}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            container.innerHTML = `
+                <div class="timeline-body">
+                    <div class="timeline-scale">
+                        <div class="timeline-scale-track">${scaleLabels}</div>
+                    </div>
+                    <div class="gantt-today-line"><span class="today-label"></span></div>
+                    ${rows}
+                </div>
+            `;
+            requestAnimationFrame(() => {
+                const body = container.querySelector('.timeline-body');
+                const track = container.querySelector('.gantt-track');
+                const line = container.querySelector('.gantt-today-line');
+                const label = line ? line.querySelector('.today-label') : null;
+                if (!body || !track || !line || !label) return;
+                const trackWidth = track.clientWidth;
+                const trackLeft = track.offsetLeft;
+                const ratio = ((today - safeStart) / (24 * 60 * 60 * 1000)) / totalDays;
+                if (ratio < 0 || ratio > 1) {
+                    line.style.display = 'none';
+                    return;
+                }
+                line.style.display = 'block';
+                line.style.left = `${trackLeft + trackWidth * ratio}px`;
+                line.style.height = `${body.scrollHeight}px`;
+                label.textContent = `${today.getMonth() + 1}/${today.getDate()}`;
+            });
+        }
+        function renderMilestones() {
+            const tbody = document.getElementById('milestoneList');
+            if (!projectData.milestones || projectData.milestones.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="empty-state">暂无里程碑</td></tr>';
+                return;
+            }
+            const statusMap = { 'not_started': '未开始', 'in_progress': '进行中', 'completed': '已完成', 'delayed': '延期' };
+            tbody.innerHTML = projectData.milestones.map(m => `
+                <tr>
+                    <td>${m.name}</td>
+                    <td>${m.planned_date || '-'}</td>
+                    <td><span class="status-tag tag-${m.status}">${statusMap[m.status] || m.status}</span></td>
+                    <td>${m.task_count || 0}</td>
+                    <td>${m.manager_name || '-'}</td>
+                </tr>
+            `).join('');
+        }
+        function renderTasks() {
+            const tbody = document.getElementById('taskList');
+            if (!projectData.tasks || projectData.tasks.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">暂无任务</td></tr>';
+                return;
+            }
+            const statusMap = { 'not_started': '未开始', 'in_progress': '进行中', 'completed': '已完成', 'overdue': '已逾期' };
+            const priorityMap = { 'high': '高', 'medium': '中', 'low': '低' };
+            const canEditTask = task => currentUser.role === 'admin'
+                || [task.project_manager_id, task.project_owner_id].includes(currentUser.id)
+                || task.manager_id === currentUser.id;
+            tbody.innerHTML = projectData.tasks.map(t => `
+                <tr>
+                    <td>${t.name}</td>
+                    <td>${t.manager_name || '-'}</td>
+                    <td>${t.due_date || '-'}</td>
+                    <td>${priorityMap[t.priority] || t.priority}</td>
+                    <td><span class="status-tag tag-${t.status}">${statusMap[t.status] || t.status}</span></td>
+                    <td>
+                        ${canEditTask(t) && t.status !== 'completed' ? `<button class="btn-action" style="background: #e8f5e9; color: #4caf50; padding: 4px 8px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;" onclick="completeTask(${t.id}, event)">完成</button>` : '-'}
+                    </td>
+                </tr>
+            `).join('');
+        }
+        async function completeTask(taskId, event) {
+            event.stopPropagation();
+            if (!confirm('确定要标记此任务为已完成吗？')) return;
+            try {
+                const response = await fetch(`/api/tasks/${taskId}/complete`, { method: 'POST', headers: { 'X-User-Id': currentUser.id } });
+                const result = await response.json();
+                if (result.success) { loadProject(); }
+                else { alert(result.message || '操作失败'); }
+            } catch (error) { alert('网络错误'); }
+        }
+        function renderMeetings() {
+            const tbody = document.getElementById('meetingList');
+            if (!projectData.meetings || projectData.meetings.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="empty-state">暂无会议</td></tr>';
+                return;
+            }
+            const statusMap = { 'pending': '待确认', 'scheduled': '待开始', 'completed': '已结束', 'cancelled': '已取消' };
+            tbody.innerHTML = projectData.meetings.map(m => `
+                <tr onclick="location.href='meeting_detail.html?id=${m.id}'" style="cursor: pointer;">
+                    <td>${m.title}</td>
+                    <td>${m.meeting_date || '-'}</td>
+                    <td>${m.organizer_name || '-'}</td>
+                    <td><span class="status-tag tag-${m.status}">${statusMap[m.status] || m.status}</span></td>
+                    <td>${m.minutes_uploaded ? '已上传' : '未上传'}</td>
+                </tr>
+            `).join('');
+        }
+        function renderMembers() {
+            const container = document.getElementById('memberList');
+            if (!projectData.members || projectData.members.length === 0) {
+                container.innerHTML = '<div class="empty-state"><i class="bi bi-people"></i><p>暂无成员</p></div>';
+                return;
+            }
+            const getProjectRoleLabel = member => {
+                const labels = [];
+                if (projectData.manager_id === member.id) labels.push('项目经理');
+                if (projectData.owner_id === member.id) labels.push('项目负责人');
+                if (labels.length === 0) labels.push(member.project_role_display || (member.project_role === 'project_manager' ? '项目经理' : member.project_role === 'project_owner' ? '项目负责人' : '成员'));
+                return labels.join(' / ');
+            };
+            container.innerHTML = projectData.members.map(m => `
+                <div class="member-card">
+                    <div class="member-avatar">${m.name.charAt(0)}</div>
+                    <div class="member-info">
+                        <div class="member-name">${m.name}</div>
+                        <div class="member-role">${getProjectRoleLabel(m)}</div>
+                    </div>
+                    <button class="btn-action btn-danger" onclick="removeMember(${m.member_id}, event)" style="margin-left: auto;">移除</button>
+                </div>
+            `).join('');
+        }
+        async function loadAllUsers() {
+            try {
+                const response = await fetch('/api/users');
+                const result = await response.json();
+                if (result.success) {
+                    allUsers = result.data;
+                }
+            } catch (error) { console.error('加载用户失败:', error); }
+        }
+        function showAddMemberModal() {
+            const existingIds = projectData.members ? projectData.members.map(m => m.id) : [];
+                const availableUsers = allUsers.filter(u => !existingIds.includes(u.id));
+                document.getElementById('memberUserSelect').innerHTML = '<option value="">请选择用户</option>' + 
+                    availableUsers.map(u => `<option value="${u.id}">${u.name} (${u.username})</option>`).join('');
+                document.getElementById('memberRoleSelect').value = 'member';
+                document.getElementById('addMemberModal').classList.add('show');
+            }
+        async function showMilestoneModal(milestoneId, event) {
+            if (event) event.stopPropagation();
+            try {
+                if (!allUsers || allUsers.length === 0) {
+                    await loadAllUsers();
+                }
+                const response = await fetch(`/api/milestones/${milestoneId}`);
+                const result = await response.json();
+                if (!result.success) {
+                    alert(result.message || '加载里程碑失败');
+                    return;
+                }
+                const milestone = result.data;
+                document.getElementById('editMilestoneId').value = milestone.id;
+                document.getElementById('editMilestoneProjectId').value = milestone.project_id || '';
+                document.getElementById('editMilestoneProject').value = milestone.project_name || projectData.name || '';
+                document.getElementById('editMilestoneName').value = milestone.name || '';
+                document.getElementById('editMilestonePlannedDate').value = milestone.planned_date || '';
+                document.getElementById('editMilestoneActualDate').value = milestone.actual_date || '';
+                document.getElementById('editMilestoneStatus').value = milestone.status || 'not_started';
+                document.getElementById('editMilestoneObjective').value = milestone.objective || '';
+                document.getElementById('editMilestoneDescription').value = milestone.description || '';
+                document.getElementById('editMilestoneNeedMeeting').checked = !!milestone.need_meeting;
+                document.getElementById('editMilestoneExpectedMeetingDate').value = milestone.expected_meeting_date || '';
+                document.getElementById('editMilestoneParticipants').value = milestone.meeting_participants || '';
+                document.getElementById('editMilestoneMeetingObjective').value = milestone.meeting_objective || '';
+                document.getElementById('editMilestoneManager').innerHTML = '<option value="">请选择</option>' + allUsers.map(user => `<option value="${user.id}">${user.name}</option>`).join('');
+                document.getElementById('editMilestoneManager').value = milestone.manager_id || '';
+                toggleMilestoneMeetingFields();
+                document.getElementById('milestoneModal').classList.add('show');
+            } catch (error) {
+                alert('网络错误');
+            }
+        }
+        function toggleMilestoneMeetingFields() {
+            const checked = document.getElementById('editMilestoneNeedMeeting').checked;
+            document.getElementById('editMilestoneMeetingFields').style.display = checked ? 'block' : 'none';
+        }
+        function hideMilestoneModal() {
+            document.getElementById('milestoneModal').classList.remove('show');
+        }
+        async function saveMilestoneDetail() {
+            const milestoneId = document.getElementById('editMilestoneId').value;
+            const data = {
+                project_id: document.getElementById('editMilestoneProjectId').value,
+                name: document.getElementById('editMilestoneName').value,
+                manager_id: document.getElementById('editMilestoneManager').value,
+                status: document.getElementById('editMilestoneStatus').value,
+                planned_date: document.getElementById('editMilestonePlannedDate').value,
+                actual_date: document.getElementById('editMilestoneActualDate').value,
+                objective: document.getElementById('editMilestoneObjective').value,
+                description: document.getElementById('editMilestoneDescription').value,
+                need_meeting: document.getElementById('editMilestoneNeedMeeting').checked,
+                expected_meeting_date: document.getElementById('editMilestoneExpectedMeetingDate').value,
+                meeting_participants: document.getElementById('editMilestoneParticipants').value,
+                meeting_objective: document.getElementById('editMilestoneMeetingObjective').value
+            };
+            if (!data.name) { alert('请填写里程碑名称'); return; }
+            try {
+                const response = await fetch(`/api/milestones/${milestoneId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                if (result.success) {
+                    hideMilestoneModal();
+                    loadProject();
+                } else {
+                    alert(result.message || '保存失败');
+                }
+            } catch (error) {
+                alert('网络错误');
+            }
+        }
+        function hideAddMemberModal() {
+            document.getElementById('addMemberModal').classList.remove('show');
+        }
+        async function addMember() {
+            const userId = document.getElementById('memberUserSelect').value;
+            const role = document.getElementById('memberRoleSelect').value;
+            if (!userId) { alert('请选择用户'); return; }
+            try {
+                const response = await fetch('/api/project-members', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ project_id: projectId, user_id: parseInt(userId), role: role })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    hideAddMemberModal();
+                    loadProject();
+                } else {
+                    alert(result.message || '添加失败');
+                }
+            } catch (error) { alert('网络错误'); }
+        }
+        async function removeMember(memberId, event) {
+            event.stopPropagation();
+            if (!confirm('确定要移除该成员吗？')) return;
+            try {
+                const response = await fetch(`/api/project-members/${memberId}`, { method: 'DELETE' });
+                const result = await response.json();
+                if (result.success) {
+                    loadProject();
+                } else {
+                    alert(result.message || '移除失败');
+                }
+            } catch (error) { alert('网络错误'); }
+        }
+        document.querySelectorAll('.tab-item').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+                this.classList.add('active');
+                document.getElementById(this.dataset.tab).classList.add('active');
+            });
+        });
+        window.onload = function() { if (checkAuth() && getProjectId()) { loadProject(); loadAllUsers(); } };
+    </script>
+</body>
+</html>

@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>会议详情 - 项目管理平台</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Microsoft YaHei', sans-serif; background: #f5f7fa; min-height: 100vh; }
+        .sidebar { position: fixed; left: 0; top: 0; width: 240px; height: 100vh; background: linear-gradient(180deg, #2c3e50 0%, #1a252f 100%); color: white; padding: 20px 0; z-index: 1000; }
+        .sidebar-header { padding: 0 20px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
+        .sidebar-header h3 { font-size: 18px; margin: 0; }
+        .sidebar-header p { font-size: 12px; opacity: 0.6; margin: 5px 0 0; }
+        .nav-menu { list-style: none; padding: 0 10px; }
+        .nav-menu li { margin-bottom: 5px; }
+        .nav-menu a { display: flex; align-items: center; padding: 12px 15px; color: rgba(255,255,255,0.7); text-decoration: none; border-radius: 8px; transition: all 0.3s; }
+        .nav-menu a:hover, .nav-menu a.active { background: rgba(255,255,255,0.1); color: white; }
+        .nav-menu i { margin-right: 10px; font-size: 18px; }
+        .main-content { margin-left: 240px; padding: 20px 30px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: white; padding: 15px 25px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .header h2 { font-size: 20px; color: #333; margin: 0; display: flex; align-items: center; gap: 10px; }
+        .header .back-btn { color: #667eea; text-decoration: none; font-size: 14px; }
+        .user-info { display: flex; align-items: center; gap: 15px; }
+        .btn-logout { padding: 8px 16px; background: #e74c3c; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; }
+        .meeting-header { background: white; border-radius: 12px; padding: 25px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .meeting-title-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+        .meeting-title { font-size: 24px; font-weight: bold; color: #333; }
+        .status-badge { padding: 6px 15px; border-radius: 20px; font-size: 14px; }
+        .status-scheduled { background: #e3f2fd; color: #2196f3; }
+        .status-completed { background: #e8f5e9; color: #4caf50; }
+        .status-cancelled { background: #f5f5f5; color: #999; }
+        .meeting-meta { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+        .meta-item { font-size: 14px; }
+        .meta-item label { color: #999; display: block; margin-bottom: 5px; }
+        .meta-item span { color: #333; }
+        .content-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+        .panel { background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .panel-header { padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .panel-header h4 { font-size: 16px; color: #333; margin: 0; }
+        .panel-body { padding: 20px; }
+        .info-section { margin-bottom: 20px; }
+        .info-section:last-child { margin-bottom: 0; }
+        .info-section h5 { font-size: 14px; color: #666; margin-bottom: 10px; }
+        .info-section p { font-size: 14px; color: #333; line-height: 1.8; }
+        .attendee-list { display: flex; flex-wrap: wrap; gap: 10px; }
+        .attendee-item { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #f8f9fa; border-radius: 20px; }
+        .attendee-avatar { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; }
+        .attendee-name { font-size: 13px; color: #333; }
+        .minutes-section { margin-top: 20px; }
+        .minutes-file { display: flex; align-items: center; gap: 10px; padding: 15px; background: #f8f9fa; border-radius: 8px; margin-bottom: 15px; }
+        .minutes-file i { font-size: 24px; color: #667eea; }
+        .minutes-file .info { flex: 1; }
+        .minutes-file .name { font-size: 14px; color: #333; }
+        .minutes-file .size { font-size: 12px; color: #999; }
+        .action-items { margin-top: 15px; }
+        .action-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px; background: #f8f9fa; border-radius: 8px; margin-bottom: 10px; }
+        .action-item .checkbox { width: 20px; height: 20px; border: 2px solid #ddd; border-radius: 4px; margin-top: 2px; }
+        .action-item .content { flex: 1; }
+        .action-item .title { font-size: 14px; color: #333; margin-bottom: 5px; }
+        .action-item .meta { font-size: 12px; color: #666; display: flex; gap: 15px; }
+        .action-item .meta span { display: flex; align-items: center; gap: 4px; }
+        .btn-action { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; }
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .btn-secondary { background: #f5f5f5; color: #666; }
+        .btn-success { background: #e8f5e9; color: #4caf50; }
+        .task-list { margin-top: 15px; }
+        .task-item { display: flex; align-items: center; gap: 12px; padding: 12px; background: #f8f9fa; border-radius: 8px; margin-bottom: 10px; }
+        .task-item .status { padding: 3px 8px; border-radius: 4px; font-size: 12px; }
+        .task-item .status.not_started { background: #f5f5f5; color: #999; }
+        .task-item .status.in_progress { background: #e3f2fd; color: #2196f3; }
+        .task-item .status.completed { background: #e8f5e9; color: #4caf50; }
+        .task-item .name { flex: 1; font-size: 14px; color: #333; }
+        .task-item .assignee { font-size: 12px; color: #666; }
+        .empty-state { text-align: center; padding: 30px 20px; color: #999; }
+        .empty-state i { font-size: 40px; margin-bottom: 10px; opacity: 0.5; }
+        .upload-area { border: 2px dashed #ddd; border-radius: 8px; padding: 30px; text-align: center; cursor: pointer; transition: border-color 0.3s; }
+        .upload-area:hover { border-color: #667eea; }
+        .upload-area i { font-size: 40px; color: #ddd; margin-bottom: 10px; }
+        .upload-area p { color: #999; font-size: 14px; }
+        @media (max-width: 1200px) { .content-grid { grid-template-columns: 1fr; } .meeting-meta { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 768px) { .sidebar { display: none; } .main-content { margin-left: 0; } .meeting-meta { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h3>项目管理平台</h3>
+            <p>数学院课题管理系统</p>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="index.html"><i class="bi bi-house"></i> 工作台</a></li>
+            <li><a href="projects.html"><i class="bi bi-folder"></i> 项目管理</a></li>
+            <li><a href="tasks.html"><i class="bi bi-check-square"></i> 任务管理</a></li>
+            <li><a href="meetings.html" class="active"><i class="bi bi-calendar-event"></i> 会议中心</a></li>
+            <li><a href="minutes.html"><i class="bi bi-file-text"></i> 会议纪要</a></li>
+            <li><a href="notifications.html"><i class="bi bi-bell"></i> 提醒中心</a></li>
+            <li><a href="members.html"><i class="bi bi-people"></i> 成员管理</a></li>
+            <li><a href="settings.html"><i class="bi bi-gear"></i> 系统设置</a></li>
+        </ul>
+    </div>
+    <div class="main-content">
+        <div class="header">
+            <h2><a href="meetings.html" class="back-btn"><i class="bi bi-arrow-left"></i></a> <span id="pageTitle">会议详情</span></h2>
+            <div class="user-info">
+                <span id="userName">加载中...</span>
+                <button class="btn-logout" onclick="logout()">退出登录</button>
+            </div>
+        </div>
+        <div class="meeting-header" id="meetingHeader">
+            <div class="meeting-title-row">
+                <div class="meeting-title" id="meetingTitle">加载中...</div>
+                <span class="status-badge" id="meetingStatus"></span>
+            </div>
+            <div class="meeting-meta" id="meetingMeta"></div>
+        </div>
+        <div class="content-grid">
+            <div class="panel">
+                <div class="panel-header">
+                    <h4>会议信息</h4>
+                    <button class="btn-action btn-secondary" onclick="editMeeting()">编辑</button>
+                </div>
+                <div class="panel-body">
+                    <div class="info-section">
+                        <h5>会议目标</h5>
+                        <p id="meetingObjective">暂无</p>
+                    </div>
+                    <div class="info-section">
+                        <h5>会议描述</h5>
+                        <p id="meetingDescription">暂无</p>
+                    </div>
+                    <div class="minutes-section" id="minutesSection">
+                        <h5>会议纪要</h5>
+                        <div id="minutesContent"></div>
+                    </div>
+                    <div class="info-section" id="generatedTasksSection" style="display: none;">
+                        <h5>生成的任务</h5>
+                        <div class="task-list" id="generatedTasks"></div>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div class="panel" style="margin-bottom: 20px;">
+                    <div class="panel-header">
+                        <h4>参会人员</h4>
+                    </div>
+                    <div class="panel-body">
+                        <div class="attendee-list" id="attendeeList"></div>
+                    </div>
+                </div>
+                <div class="panel">
+                    <div class="panel-header">
+                        <h4>来源信息</h4>
+                    </div>
+                    <div class="panel-body">
+                        <div class="info-section">
+                            <h5>所属项目</h5>
+                            <p id="projectName">-</p>
+                        </div>
+                        <div class="info-section" id="sourceSection">
+                            <h5>来源</h5>
+                            <p id="sourceInfo">手工创建</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        let currentUser = null;
+        let meetingId = null;
+        let meetingData = null;
+        function checkAuth() {
+            const userStr = localStorage.getItem('user');
+            if (!userStr) { window.location.href = 'login.html'; return false; }
+            currentUser = JSON.parse(userStr);
+            document.getElementById('userName').textContent = currentUser.name;
+            return true;
+        }
+        function logout() { localStorage.removeItem('user'); window.location.href = 'login.html'; }
+        function getMeetingId() {
+            const params = new URLSearchParams(window.location.search);
+            meetingId = params.get('id');
+            if (!meetingId) { window.location.href = 'meetings.html'; return false; }
+            return true;
+        }
+        async function loadMeeting() {
+            try {
+                const response = await fetch(`/api/meetings/${meetingId}`);
+                const result = await response.json();
+                if (result.success) {
+                    meetingData = result.data;
+                    renderMeeting();
+                } else { alert('会议不存在'); window.location.href = 'meetings.html'; }
+            } catch (error) { console.error('加载会议失败:', error); }
+        }
+        function renderMeeting() {
+            const statusMap = { 'pending': '待开始', 'scheduled': '待开始', 'completed': '已结束', 'cancelled': '已取消' };
+            document.getElementById('pageTitle').textContent = meetingData.title;
+            document.getElementById('meetingTitle').textContent = meetingData.title;
+            const statusEl = document.getElementById('meetingStatus');
+            statusEl.textContent = statusMap[meetingData.status] || meetingData.status;
+            statusEl.className = 'status-badge status-' + (meetingData.status === 'pending' ? 'scheduled' : meetingData.status);
+            document.getElementById('meetingMeta').innerHTML = `
+                <div class="meta-item"><label>会议时间</label><span>${meetingData.meeting_date || '待定'}</span></div>
+                <div class="meta-item"><label>会议地点</label><span>${meetingData.location || '待定'}</span></div>
+                <div class="meta-item"><label>组织者</label><span>${meetingData.organizer_name || '-'}</span></div>
+                <div class="meta-item"><label>会议方式</label><span>${meetingData.meeting_type === 'online' ? '线上会议' : '线下会议'}</span></div>
+            `;
+            document.getElementById('meetingObjective').textContent = meetingData.objective || '暂无';
+            document.getElementById('meetingDescription').textContent = meetingData.description || '暂无';
+            document.getElementById('projectName').textContent = meetingData.project_name || '-';
+            const sourceMap = { 'manual': '手工创建', 'task': '任务触发', 'milestone': '里程碑触发' };
+            document.getElementById('sourceInfo').textContent = sourceMap[meetingData.source] || meetingData.source;
+            const attendeeList = document.getElementById('attendeeList');
+            if (meetingData.attendees && meetingData.attendees.length > 0) {
+                attendeeList.innerHTML = meetingData.attendees.map(a => `
+                    <div class="attendee-item">
+                        <div class="attendee-avatar">${a.name.charAt(0)}</div>
+                        <span class="attendee-name">${a.name}</span>
+                    </div>
+                `).join('');
+            } else {
+                attendeeList.innerHTML = '<div class="empty-state"><p>暂无参会人员</p></div>';
+            }
+            renderMinutes();
+            renderGeneratedTasks();
+        }
+        function renderMinutes() {
+            const container = document.getElementById('minutesContent');
+            if (meetingData.minutes) {
+                const minutes = meetingData.minutes;
+                let html = `
+                    <div class="minutes-file">
+                        <i class="bi bi-file-earmark-text"></i>
+                        <div class="info">
+                            <div class="name">${minutes.file_name || '会议纪要'}</div>
+                            <div class="size">上传时间: ${minutes.created_at || '-'}${minutes.parse_status ? ` · 解析状态: ${minutes.parse_status === 'parsing' ? '解析中' : minutes.parse_status === 'parsed' ? '已完成' : minutes.parse_status === 'failed' ? '失败' : '待解析'}` : ''}</div>
+                        </div>
+                    </div>
+                `;
+                if (minutes.parse_error) {
+                    html += `<div class="info-section"><h5>解析错误</h5><p style="white-space: pre-wrap; color: #f44336;">${minutes.parse_error}</p></div>`;
+                }
+                if (minutes.content) {
+                    html += `<div class="info-section"><h5>纪要内容</h5><p style="white-space: pre-wrap;">${minutes.content}</p></div>`;
+                }
+                if (minutes.action_items && minutes.action_items.length > 0) {
+                    html += `
+                        <div class="action-items">
+                            <h5>识别的行动项 (${minutes.action_items.length})</h5>
+                            ${minutes.action_items.map(item => `
+                                <div class="action-item">
+                                    <div class="checkbox" style="background: ${item.status === 'confirmed' ? '#4caf50' : 'transparent'}; border-color: ${item.status === 'confirmed' ? '#4caf50' : '#ddd'};"></div>
+                                    <div class="content">
+                                        <div class="title">${item.title}</div>
+                                        <div class="meta">
+                                            <span><i class="bi bi-person"></i> ${item.assignee_name || '待分配'}</span>
+                                            <span><i class="bi bi-calendar"></i> ${item.due_date || '待定'}</span>
+                                            <span><i class="bi bi-star"></i> 置信度: ${Math.round(item.confidence * 100)}%</span>
+                                        </div>
+                                    </div>
+                                    ${item.status === 'pending' ? `<button class="btn-action btn-success" onclick="confirmActionItem(${item.id})">确认生成任务</button>` : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+                container.innerHTML = html;
+            } else {
+                if (meetingData.status === 'completed') {
+                    container.innerHTML = `
+                        <div class="upload-area" onclick="uploadMinutes()">
+                            <i class="bi bi-cloud-upload"></i>
+                            <p>点击上传会议纪要</p>
+                            <p style="font-size: 12px;">支持 Word、PDF、TXT 格式</p>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="bi bi-clock-history"></i>
+                            <p>会议未开始或未结束，暂不能上传会议纪要</p>
+                        </div>
+                    `;
+                }
+            }
+        }
+        function renderGeneratedTasks() {
+            const section = document.getElementById('generatedTasksSection');
+            const container = document.getElementById('generatedTasks');
+            if (meetingData.generated_tasks && meetingData.generated_tasks.length > 0) {
+                section.style.display = 'block';
+                container.innerHTML = meetingData.generated_tasks.map(t => `
+                    <div class="task-item">
+                        <span class="name">${t.name}</span>
+                        <span class="assignee">${t.manager_name || '-'}</span>
+                    </div>
+                `).join('');
+            } else {
+                section.style.display = 'none';
+            }
+        }
+        function editMeeting() { window.location.href = `meetings.html?edit=${meetingId}`; }
+        function uploadMinutes() { window.location.href = `minutes.html?meeting_id=${meetingId}`; }
+        async function confirmActionItem(actionId) {
+            try {
+                const response = await fetch(`/api/action-items/${actionId}/confirm`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ project_id: meetingData.project_id })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    alert('任务已生成');
+                    loadMeeting();
+                } else { alert(result.message || '操作失败'); }
+            } catch (error) { alert('网络错误'); }
+        }
+        window.onload = function() { if (checkAuth() && getMeetingId()) { loadMeeting(); } };
+    </script>
+</body>
+</html>

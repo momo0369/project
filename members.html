@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>成员管理 - 项目管理平台</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Microsoft YaHei', sans-serif; background: #f5f7fa; min-height: 100vh; }
+        .sidebar { position: fixed; left: 0; top: 0; width: 240px; height: 100vh; background: linear-gradient(180deg, #2c3e50 0%, #1a252f 100%); color: white; padding: 20px 0; z-index: 1000; }
+        .sidebar-header { padding: 0 20px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
+        .sidebar-header h3 { font-size: 18px; margin: 0; }
+        .sidebar-header p { font-size: 12px; opacity: 0.6; margin: 5px 0 0; }
+        .nav-menu { list-style: none; padding: 0 10px; }
+        .nav-menu li { margin-bottom: 5px; }
+        .nav-menu a { display: flex; align-items: center; padding: 12px 15px; color: rgba(255,255,255,0.7); text-decoration: none; border-radius: 8px; transition: all 0.3s; }
+        .nav-menu a:hover, .nav-menu a.active { background: rgba(255,255,255,0.1); color: white; }
+        .nav-menu i { margin-right: 10px; font-size: 18px; }
+        .main-content { margin-left: 240px; padding: 20px 30px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: white; padding: 15px 25px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .header h2 { font-size: 20px; color: #333; margin: 0; }
+        .user-info { display: flex; align-items: center; gap: 15px; }
+        .btn-logout { padding: 8px 16px; background: #e74c3c; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab-btn { padding: 10px 20px; background: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; color: #666; transition: all 0.3s; }
+        .tab-btn.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .search-box { display: flex; gap: 10px; }
+        .search-box input { padding: 10px 15px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; min-width: 200px; }
+        .btn-primary { padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; }
+        .member-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        .member-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .member-header { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
+        .member-avatar { width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; font-weight: bold; }
+        .member-info { flex: 1; }
+        .member-name { font-size: 16px; font-weight: bold; color: #333; margin-bottom: 3px; }
+        .member-role { font-size: 13px; color: #666; }
+        .role-badge { padding: 3px 8px; border-radius: 4px; font-size: 12px; }
+        .role-admin { background: #ffebee; color: #e53935; }
+        .role-project_manager { background: #e3f2fd; color: #2196f3; }
+        .role-project_owner { background: #fff3e0; color: #ff9800; }
+        .role-member { background: #e8f5e9; color: #4caf50; }
+        .member-details { font-size: 13px; color: #666; margin-bottom: 15px; }
+        .member-details div { margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+        .member-details i { width: 16px; color: #999; }
+        .member-tags { display: flex; gap: 8px; margin-bottom: 15px; }
+        .tag { padding: 3px 8px; border-radius: 4px; font-size: 11px; }
+        .tag-yes { background: #e8f5e9; color: #4caf50; }
+        .tag-no { background: #f5f5f5; color: #999; }
+        .member-actions { display: flex; gap: 8px; }
+        .btn-action { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .btn-edit { background: #e3f2fd; color: #2196f3; }
+        .btn-delete { background: #ffebee; color: #f44336; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; }
+        .modal.show { display: flex; }
+        .modal-content { background: white; border-radius: 12px; width: 500px; max-width: 90%; }
+        .modal-header { padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .modal-header h3 { margin: 0; font-size: 18px; }
+        .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #999; }
+        .modal-body { padding: 20px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; color: #666; font-size: 14px; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .form-checkbox { display: flex; align-items: center; gap: 8px; }
+        .form-checkbox input { width: auto; }
+        .modal-footer { padding: 15px 20px; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 10px; }
+        .btn-secondary { padding: 10px 20px; background: #f5f5f5; color: #333; border: none; border-radius: 8px; cursor: pointer; }
+        .empty-state { text-align: center; padding: 60px 20px; color: #999; }
+        .empty-state i { font-size: 64px; margin-bottom: 20px; opacity: 0.5; }
+        @media (max-width: 768px) { .sidebar { display: none; } .main-content { margin-left: 0; } .member-grid { grid-template-columns: 1fr; } .form-row { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h3>项目管理平台</h3>
+            <p>数学院课题管理系统</p>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="index.html"><i class="bi bi-house"></i> 工作台</a></li>
+            <li><a href="projects.html"><i class="bi bi-folder"></i> 项目管理</a></li>
+            <li><a href="tasks.html"><i class="bi bi-check-square"></i> 任务管理</a></li>
+            <li><a href="meetings.html"><i class="bi bi-calendar-event"></i> 会议中心</a></li>
+            <li><a href="minutes.html"><i class="bi bi-file-text"></i> 会议纪要</a></li>
+            <li><a href="notifications.html"><i class="bi bi-bell"></i> 提醒中心</a></li>
+            <li><a href="members.html" class="active"><i class="bi bi-people"></i> 成员管理</a></li>
+            <li><a href="settings.html"><i class="bi bi-gear"></i> 系统设置</a></li>
+        </ul>
+    </div>
+    <div class="main-content">
+        <div class="header">
+            <h2>成员管理</h2>
+            <div class="user-info">
+                <span id="userName">加载中...</span>
+                <button class="btn-logout" onclick="logout()">退出登录</button>
+            </div>
+        </div>
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="all">全部成员</button>
+            <button class="tab-btn" data-tab="project">项目成员</button>
+        </div>
+        <div class="toolbar">
+            <div class="search-box">
+                <input type="text" id="searchKeyword" placeholder="搜索成员姓名/账号">
+                <button class="btn-primary" onclick="loadMembers()">搜索</button>
+            </div>
+            <button class="btn-primary" id="createMemberBtn" onclick="showCreateModal()"><i class="bi bi-plus"></i> 新建成员</button>
+        </div>
+        <div class="member-grid" id="memberGrid"></div>
+    </div>
+    <div class="modal" id="createModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">新建成员</h3>
+                <button class="modal-close" onclick="hideCreateModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="createForm">
+                    <input type="hidden" id="memberId">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>用户名 *</label>
+                            <input type="text" id="username" required>
+                        </div>
+                        <div class="form-group">
+                            <label>姓名 *</label>
+                            <input type="text" id="memberName" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>密码 *</label>
+                            <input type="password" id="password" required>
+                        </div>
+                        <div class="form-group">
+                            <label>角色</label>
+                            <select id="memberRole">
+                                <option value="admin">管理员</option>
+                                <option value="project_manager">项目经理</option>
+                                <option value="project_owner">项目负责人</option>
+                                <option value="member">成员</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>邮箱</label>
+                            <input type="email" id="email">
+                        </div>
+                        <div class="form-group">
+                            <label>手机号</label>
+                            <input type="text" id="phone">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-checkbox">
+                            <input type="checkbox" id="canAttendMeeting" checked>
+                            可参加会议
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-checkbox">
+                            <input type="checkbox" id="canAssignTask" checked>
+                            可被分配任务
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="hideCreateModal()">取消</button>
+                <button class="btn-primary" onclick="saveMember()">保存</button>
+            </div>
+        </div>
+    </div>
+    <div class="modal" id="projectModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>添加项目成员</h3>
+                <button class="modal-close" onclick="hideProjectModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="projectForm">
+                    <div class="form-group">
+                        <label>选择项目 *</label>
+                        <select id="selectProject" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>选择成员 *</label>
+                        <select id="selectMember" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>项目角色</label>
+                        <select id="projectRole">
+                            <option value="member">成员</option>
+                            <option value="project_manager">项目经理</option>
+                            <option value="project_owner">项目负责人</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="hideProjectModal()">取消</button>
+                <button class="btn-primary" onclick="addToProject()">添加</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        let currentUser = null;
+        let currentTab = 'all';
+        let members = [];
+        let projects = [];
+        let editingId = null;
+        function normalizeRole(user) {
+            if (!user) return user;
+            if (user.role === 'manager') user.role = user.username === 'admin' ? 'admin' : 'project_manager';
+            if (user.role === 'leader') user.role = 'project_owner';
+            if (user.role === 'observer') user.role = 'member';
+            return user;
+        }
+        function isAdmin() { return currentUser && currentUser.role === 'admin'; }
+        function getRoleLabel(role) {
+            const roleMap = {
+                admin: '管理员',
+                project_manager: '项目经理',
+                project_owner: '项目负责人',
+                member: '成员'
+            };
+            return roleMap[role] || role;
+        }
+        function getAdminHeaders() {
+            return {
+                'Content-Type': 'application/json',
+                'X-User-Id': currentUser.id
+            };
+        }
+        function checkAuth() {
+            const userStr = localStorage.getItem('user');
+            if (!userStr) { window.location.href = 'login.html'; return false; }
+            currentUser = normalizeRole(JSON.parse(userStr));
+            document.getElementById('userName').textContent = currentUser.name;
+            document.getElementById('createMemberBtn').style.display = isAdmin() ? 'inline-flex' : 'none';
+            return true;
+        }
+        function logout() { localStorage.removeItem('user'); window.location.href = 'login.html'; }
+        async function loadMembers() {
+            try {
+                const response = await fetch('/api/users');
+                const result = await response.json();
+                if (result.success) {
+                    members = result.data;
+                    renderMembers();
+                }
+            } catch (error) { console.error('加载成员失败:', error); }
+        }
+        async function loadProjects() {
+            try {
+                const response = await fetch('/api/projects?page=1&size=100');
+                const result = await response.json();
+                if (result.success) {
+                    projects = result.data.list;
+                    document.getElementById('selectProject').innerHTML = '<option value="">请选择项目</option>' + projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+                }
+            } catch (error) { console.error('加载项目失败:', error); }
+        }
+        function renderMembers() {
+            const container = document.getElementById('memberGrid');
+            const keyword = document.getElementById('searchKeyword').value.toLowerCase();
+            let filteredMembers = members;
+            if (keyword) {
+                filteredMembers = members.filter(m => m.name.toLowerCase().includes(keyword) || m.username.toLowerCase().includes(keyword));
+            }
+            if (!filteredMembers || filteredMembers.length === 0) {
+                container.innerHTML = '<div class="empty-state"><i class="bi bi-people"></i><p>暂无成员数据</p></div>';
+                return;
+            }
+            container.innerHTML = filteredMembers.map(m => `
+                <div class="member-card">
+                    <div class="member-header">
+                        <div class="member-avatar">${m.name.charAt(0)}</div>
+                        <div class="member-info">
+                            <div class="member-name">${m.name}</div>
+                            <span class="role-badge role-${m.role}">${getRoleLabel(m.role)}</span>
+                        </div>
+                    </div>
+                    <div class="member-details">
+                        <div><i class="bi bi-person"></i> ${m.username}</div>
+                        <div><i class="bi bi-envelope"></i> ${m.email || '-'}</div>
+                        <div><i class="bi bi-phone"></i> ${m.phone || '-'}</div>
+                    </div>
+                    <div class="member-tags">
+                        <span class="tag ${m.can_attend_meeting ? 'tag-yes' : 'tag-no'}">${m.can_attend_meeting ? '可参会' : '不可参会'}</span>
+                        <span class="tag ${m.can_assign_task ? 'tag-yes' : 'tag-no'}">${m.can_assign_task ? '可分配任务' : '不可分配'}</span>
+                    </div>
+                    ${isAdmin() ? `<div class="member-actions">
+                        <button class="btn-action btn-edit" onclick="editMember(${m.id})">编辑</button>
+                        <button class="btn-action btn-delete" onclick="deleteMember(${m.id})">删除</button>
+                    </div>` : ''}
+                </div>
+            `).join('');
+        }
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentTab = this.dataset.tab;
+                if (currentTab === 'project') { showProjectModal(); }
+            });
+        });
+        function showCreateModal() {
+            if (!isAdmin()) { alert('仅管理员可以新建账号'); return; }
+            editingId = null;
+            document.getElementById('modalTitle').textContent = '新建成员';
+            document.getElementById('createForm').reset();
+            document.getElementById('password').required = true;
+            document.getElementById('createModal').classList.add('show');
+        }
+        function hideCreateModal() { document.getElementById('createModal').classList.remove('show'); }
+        function showProjectModal() {
+            document.getElementById('selectMember').innerHTML = '<option value="">请选择成员</option>' + members.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+            document.getElementById('projectModal').classList.add('show');
+        }
+        function hideProjectModal() { document.getElementById('projectModal').classList.remove('show'); }
+        async function editMember(id) {
+            if (!isAdmin()) { alert('仅管理员可以编辑账号'); return; }
+            const member = members.find(m => m.id === id);
+            if (!member) return;
+            editingId = id;
+            document.getElementById('modalTitle').textContent = '编辑成员';
+            document.getElementById('memberId').value = id;
+            document.getElementById('username').value = member.username;
+            document.getElementById('memberName').value = member.name;
+            document.getElementById('password').value = '';
+            document.getElementById('password').required = false;
+            document.getElementById('memberRole').value = member.role;
+            document.getElementById('email').value = member.email || '';
+            document.getElementById('phone').value = member.phone || '';
+            document.getElementById('canAttendMeeting').checked = member.can_attend_meeting;
+            document.getElementById('canAssignTask').checked = member.can_assign_task;
+            document.getElementById('createModal').classList.add('show');
+        }
+        async function saveMember() {
+            if (!isAdmin()) { alert('仅管理员可以保存账号'); return; }
+            const data = {
+                username: document.getElementById('username').value,
+                name: document.getElementById('memberName').value,
+                password: document.getElementById('password').value,
+                role: document.getElementById('memberRole').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                can_attend_meeting: document.getElementById('canAttendMeeting').checked,
+                can_assign_task: document.getElementById('canAssignTask').checked
+            };
+            if (!data.username || !data.name) { alert('请填写必填项'); return; }
+            if (!editingId && !data.password) { alert('请填写密码'); return; }
+            try {
+                const url = editingId ? `/api/users/${editingId}` : '/api/users';
+                const method = editingId ? 'PUT' : 'POST';
+                const response = await fetch(url, { method, headers: getAdminHeaders(), body: JSON.stringify(data) });
+                const result = await response.json();
+                if (result.success) { hideCreateModal(); loadMembers(); }
+                else { alert(result.message || '保存失败'); }
+            } catch (error) { alert('网络错误'); }
+        }
+        async function deleteMember(id) {
+            if (!isAdmin()) { alert('仅管理员可以删除账号'); return; }
+            if (!confirm('确定要删除这个成员吗？')) return;
+            try {
+                const response = await fetch(`/api/users/${id}`, { method: 'DELETE', headers: { 'X-User-Id': currentUser.id } });
+                const result = await response.json();
+                if (result.success) { loadMembers(); }
+                else { alert(result.message || '删除失败'); }
+            } catch (error) { alert('网络错误'); }
+        }
+        async function addToProject() {
+            const data = {
+                project_id: document.getElementById('selectProject').value,
+                user_id: document.getElementById('selectMember').value,
+                role: document.getElementById('projectRole').value
+            };
+            if (!data.project_id || !data.user_id) { alert('请选择项目和成员'); return; }
+            try {
+                const response = await fetch('/api/project-members', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                if (result.success) { hideProjectModal(); alert('添加成功'); }
+                else { alert(result.message || '添加失败'); }
+            } catch (error) { alert('网络错误'); }
+        }
+        window.onload = function() { if (checkAuth()) { loadMembers(); loadProjects(); } };
+    </script>
+</body>
+</html>

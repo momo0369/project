@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>会议中心 - 项目管理平台</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Microsoft YaHei', sans-serif; background: #f5f7fa; min-height: 100vh; }
+        .sidebar { position: fixed; left: 0; top: 0; width: 240px; height: 100vh; background: linear-gradient(180deg, #2c3e50 0%, #1a252f 100%); color: white; padding: 20px 0; z-index: 1000; }
+        .sidebar-header { padding: 0 20px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
+        .sidebar-header h3 { font-size: 18px; margin: 0; }
+        .sidebar-header p { font-size: 12px; opacity: 0.6; margin: 5px 0 0; }
+        .nav-menu { list-style: none; padding: 0 10px; }
+        .nav-menu li { margin-bottom: 5px; }
+        .nav-menu a { display: flex; align-items: center; padding: 12px 15px; color: rgba(255,255,255,0.7); text-decoration: none; border-radius: 8px; transition: all 0.3s; }
+        .nav-menu a:hover, .nav-menu a.active { background: rgba(255,255,255,0.1); color: white; }
+        .nav-menu i { margin-right: 10px; font-size: 18px; }
+        .main-content { margin-left: 240px; padding: 20px 30px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: white; padding: 15px 25px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .header h2 { font-size: 20px; color: #333; margin: 0; }
+        .user-info { display: flex; align-items: center; gap: 15px; }
+        .btn-logout { padding: 8px 16px; background: #e74c3c; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab-btn { padding: 10px 20px; background: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; color: #666; transition: all 0.3s; }
+        .tab-btn.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .tab-btn:hover:not(.active) { background: #f0f0f0; }
+        .reminder-section { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .reminder-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .reminder-header h3 { font-size: 16px; color: #333; display: flex; align-items: center; gap: 8px; }
+        .reminder-header h3 i { color: #ff9800; }
+        .reminder-list { display: grid; gap: 15px; }
+        .reminder-item { display: flex; align-items: flex-start; gap: 15px; padding: 15px; background: #fff3e0; border-radius: 8px; border-left: 3px solid #ff9800; }
+        .reminder-icon { width: 40px; height: 40px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #ff9800; }
+        .reminder-content { flex: 1; }
+        .reminder-title { font-size: 14px; font-weight: bold; color: #333; margin-bottom: 5px; }
+        .reminder-desc { font-size: 13px; color: #666; margin-bottom: 8px; }
+        .reminder-meta { font-size: 12px; color: #999; display: flex; gap: 15px; }
+        .btn-create { padding: 8px 16px; background: #ff9800; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; }
+        .btn-create:hover { background: #f57c00; }
+        .meeting-list { background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .meeting-item { padding: 20px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: flex-start; gap: 20px; cursor: pointer; transition: background 0.3s; }
+        .meeting-item:hover { background: #f8f9fa; }
+        .meeting-item:last-child { border-bottom: none; }
+        .meeting-date { width: 60px; text-align: center; }
+        .date-day { font-size: 24px; font-weight: bold; color: #667eea; }
+        .date-month { font-size: 12px; color: #999; }
+        .meeting-content { flex: 1; }
+        .meeting-title { font-size: 16px; font-weight: bold; color: #333; margin-bottom: 8px; }
+        .meeting-meta { display: flex; gap: 20px; font-size: 13px; color: #666; margin-bottom: 8px; }
+        .meeting-meta span { display: flex; align-items: center; gap: 5px; }
+        .meeting-tags { display: flex; gap: 8px; }
+        .tag { padding: 3px 8px; border-radius: 4px; font-size: 12px; }
+        .tag-scheduled { background: #e3f2fd; color: #2196f3; }
+        .tag-completed { background: #e8f5e9; color: #4caf50; }
+        .tag-cancelled { background: #f5f5f5; color: #999; }
+        .tag-minutes { background: #e8f5e9; color: #4caf50; }
+        .tag-no-minutes { background: #ffebee; color: #f44336; }
+        .meeting-actions { display: flex; flex-direction: column; gap: 8px; }
+        .btn-action { padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; }
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .btn-secondary { background: #f5f5f5; color: #666; }
+        .btn-danger { background: #ffebee; color: #f44336; }
+        .pagination { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 20px; padding: 15px; }
+        .pagination button { padding: 8px 15px; border: 1px solid #ddd; background: white; border-radius: 6px; cursor: pointer; }
+        .pagination button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .pagination span { color: #666; font-size: 14px; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; }
+        .modal.show { display: flex; }
+        .modal-content { background: white; border-radius: 12px; width: 700px; max-width: 90%; max-height: 90vh; overflow-y: auto; }
+        .modal-header { padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .modal-header h3 { margin: 0; font-size: 18px; }
+        .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #999; }
+        .modal-body { padding: 20px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; color: #666; font-size: 14px; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+        .form-group textarea { min-height: 80px; resize: vertical; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .attendee-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+        .attendee-item { display: flex; align-items: center; gap: 5px; padding: 5px 10px; background: #f5f5f5; border-radius: 20px; font-size: 13px; }
+        .attendee-item .remove { cursor: pointer; color: #999; }
+        .modal-footer { padding: 15px 20px; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 10px; }
+        .empty-state { text-align: center; padding: 40px 20px; color: #999; }
+        .empty-state i { font-size: 48px; margin-bottom: 15px; opacity: 0.5; }
+        @media (max-width: 768px) { .sidebar { display: none; } .main-content { margin-left: 0; } .form-row { grid-template-columns: 1fr; } .meeting-meta { flex-direction: column; gap: 8px; } }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h3>项目管理平台</h3>
+            <p>数学院课题管理系统</p>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="index.html"><i class="bi bi-house"></i> 工作台</a></li>
+            <li><a href="projects.html"><i class="bi bi-folder"></i> 项目管理</a></li>
+            <li><a href="tasks.html"><i class="bi bi-check-square"></i> 任务管理</a></li>
+            <li><a href="meetings.html" class="active"><i class="bi bi-calendar-event"></i> 会议中心</a></li>
+            <li><a href="minutes.html"><i class="bi bi-file-text"></i> 会议纪要</a></li>
+            <li><a href="notifications.html"><i class="bi bi-bell"></i> 提醒中心</a></li>
+            <li><a href="members.html"><i class="bi bi-people"></i> 成员管理</a></li>
+            <li><a href="settings.html"><i class="bi bi-gear"></i> 系统设置</a></li>
+        </ul>
+    </div>
+    <div class="main-content">
+        <div class="header">
+            <h2>会议中心</h2>
+            <div class="user-info">
+                <span id="userName">加载中...</span>
+                <button class="btn-logout" onclick="logout()">退出登录</button>
+            </div>
+        </div>
+        <div class="tabs">
+            <button class="tab-btn active" data-status="">全部会议</button>
+            <button class="tab-btn" data-status="scheduled">待开始</button>
+            <button class="tab-btn" data-status="completed">已结束</button>
+            <button class="btn-action btn-primary" style="margin-left: auto; padding: 10px 20px;" onclick="showCreateModal()"><i class="bi bi-plus"></i> 新建会议</button>
+        </div>
+        <div class="reminder-section" id="reminderSection">
+            <div class="reminder-header">
+                <h3><i class="bi bi-bell"></i> 待创建会议提醒</h3>
+            </div>
+            <div class="reminder-list" id="reminderList"></div>
+        </div>
+        <div class="meeting-list" id="meetingList"></div>
+        <div class="pagination" id="pagination" style="display: none;">
+            <button onclick="prevPage()">上一页</button>
+            <span id="pageInfo"></span>
+            <button onclick="nextPage()">下一页</button>
+        </div>
+    </div>
+    <div class="modal" id="createModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">新建会议</h3>
+                <button class="modal-close" onclick="hideCreateModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="createForm">
+                    <input type="hidden" id="meetingId">
+                    <input type="hidden" id="sourceTaskId">
+                    <input type="hidden" id="sourceMilestoneId">
+                    <div class="form-group">
+                        <label>所属项目 *</label>
+                        <select id="meetingProject" required onchange="loadAllUsers()"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>会议主题 *</label>
+                        <input type="text" id="meetingTitle" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>会议时间 *</label>
+                            <input type="datetime-local" id="meetingDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label>会议方式 *</label>
+                            <select id="meetingType" required>
+                                <option value="">请选择</option>
+                                <option value="offline">线下会议</option>
+                                <option value="online">线上会议</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>会议地点或链接 *</label>
+                        <input type="text" id="meetingLocation" placeholder="线下会议地点或线上会议链接" required>
+                    </div>
+                    <div class="form-group">
+                        <label>会议目标</label>
+                        <textarea id="meetingObjective"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>会议描述</label>
+                        <textarea id="meetingDescription"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>参会人员 *</label>
+                        <select id="attendeeSelect" onchange="addAttendee()">
+                            <option value="">选择参会人员</option>
+                        </select>
+                        <div class="attendee-list" id="attendeeList"></div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-action btn-secondary" onclick="hideCreateModal()">取消</button>
+                <button class="btn-action btn-primary" onclick="saveMeeting()">保存</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        let currentUser = null;
+        let currentPage = 1;
+        let pageSize = 10;
+        let totalItems = 0;
+        let currentStatus = '';
+        let projects = [];
+        let users = [];
+        let selectedAttendees = [];
+        let editingId = null;
+        function checkAuth() {
+            const userStr = localStorage.getItem('user');
+            if (!userStr) { window.location.href = 'login.html'; return false; }
+            currentUser = JSON.parse(userStr);
+            document.getElementById('userName').textContent = currentUser.name;
+            return true;
+        }
+        function logout() { localStorage.removeItem('user'); window.location.href = 'login.html'; }
+        async function loadProjects() {
+            try {
+                const response = await fetch('/api/projects?page=1&size=100');
+                const result = await response.json();
+                if (result.success) {
+                    projects = result.data.list;
+                    document.getElementById('meetingProject').innerHTML = '<option value="">请选择项目</option>' + projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+                }
+            } catch (error) { console.error('加载项目失败:', error); }
+        }
+        async function loadUsers() {
+            try {
+                const response = await fetch('/api/users');
+                const result = await response.json();
+                if (result.success) { users = result.data; }
+            } catch (error) { console.error('加载用户失败:', error); }
+        }
+        async function loadReminders() {
+            try {
+                const response = await fetch(`/api/meetings/reminders?user_id=${currentUser.id}`);
+                const result = await response.json();
+                if (result.success) { renderReminders(result.data); }
+            } catch (error) { console.error('加载提醒失败:', error); }
+        }
+        function renderReminders(reminders) {
+            const container = document.getElementById('reminderList');
+            const section = document.getElementById('reminderSection');
+            if (!reminders || reminders.length === 0) { section.style.display = 'none'; return; }
+            section.style.display = 'block';
+            container.innerHTML = reminders.map(r => `
+                <div class="reminder-item">
+                    <div class="reminder-icon"><i class="bi bi-calendar-plus"></i></div>
+                    <div class="reminder-content">
+                        <div class="reminder-title">${r.suggested_topic || r.source_name}</div>
+                        <div class="reminder-desc">${r.reason}</div>
+                        <div class="reminder-meta">
+                            <span><i class="bi bi-folder"></i> ${r.project_name || '-'}</span>
+                            <span><i class="bi bi-calendar"></i> ${r.suggested_date || '待定'}</span>
+                        </div>
+                    </div>
+                    <button class="btn-create" onclick="createFromReminder(${JSON.stringify(r).replace(/"/g, '&quot;')})">创建会议</button>
+                </div>
+            `).join('');
+        }
+        async function loadMeetings() {
+            try {
+                let url = `/api/meetings?page=${currentPage}&size=${pageSize}`;
+                if (currentStatus) url += `&status=${currentStatus}`;
+                const response = await fetch(url);
+                const result = await response.json();
+                if (result.success) {
+                    totalItems = result.data.total;
+                    renderMeetings(result.data.list);
+                    renderPagination();
+                }
+            } catch (error) { console.error('加载会议失败:', error); }
+        }
+        function renderMeetings(meetings) {
+            const container = document.getElementById('meetingList');
+            if (!meetings || meetings.length === 0) {
+                container.innerHTML = '<div class="empty-state"><i class="bi bi-calendar-event"></i><p>暂无会议数据</p></div>';
+                return;
+            }
+            const statusMap = { 'pending': '待开始', 'scheduled': '待开始', 'completed': '已结束', 'cancelled': '已取消' };
+            container.innerHTML = meetings.map(m => {
+                const date = m.meeting_date ? new Date(m.meeting_date) : null;
+                const day = date ? date.getDate() : '-';
+                const month = date ? (date.getMonth() + 1) + '月' : '-';
+                const statusClass = m.status === 'pending' ? 'scheduled' : m.status;
+                return `
+                <div class="meeting-item" onclick="location.href='meeting_detail.html?id=${m.id}'">
+                    <div class="meeting-date">
+                        <div class="date-day">${day}</div>
+                        <div class="date-month">${month}</div>
+                    </div>
+                    <div class="meeting-content">
+                        <div class="meeting-title">${m.title}</div>
+                        <div class="meeting-meta">
+                            <span><i class="bi bi-folder"></i> ${m.project_name || '-'}</span>
+                            <span><i class="bi bi-clock"></i> ${m.meeting_date || '待定'}</span>
+                            <span><i class="bi bi-person"></i> ${m.organizer_name || '-'}</span>
+                            <span><i class="bi bi-people"></i> ${m.attendee_count}人</span>
+                        </div>
+                        <div class="meeting-tags">
+                            <span class="tag tag-${statusClass}">${statusMap[m.status] || m.status}</span>
+                            <span class="tag ${m.minutes_uploaded ? 'tag-minutes' : 'tag-no-minutes'}">${m.minutes_uploaded ? '已上传纪要' : '未上传纪要'}</span>
+                        </div>
+                    </div>
+                    <div class="meeting-actions" onclick="event.stopPropagation()">
+                        ${!m.minutes_uploaded && m.status === 'completed' ? `<button class="btn-action btn-primary" onclick="uploadMinutes(${m.id})">上传纪要</button>` : ''}
+                        <button class="btn-action btn-secondary" onclick="editMeeting(${m.id})">编辑</button>
+                        <button class="btn-action btn-danger" onclick="deleteMeeting(${m.id})">删除</button>
+                    </div>
+                </div>
+            `}).join('');
+        }
+        function renderPagination() {
+            const totalPages = Math.ceil(totalItems / pageSize);
+            const pagination = document.getElementById('pagination');
+            if (totalPages <= 1) { pagination.style.display = 'none'; return; }
+            pagination.style.display = 'flex';
+            document.getElementById('pageInfo').textContent = `第 ${currentPage} / ${totalPages} 页`;
+        }
+        function prevPage() { if (currentPage > 1) { currentPage--; loadMeetings(); } }
+        function nextPage() { const totalPages = Math.ceil(totalItems / pageSize); if (currentPage < totalPages) { currentPage++; loadMeetings(); } }
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentStatus = this.dataset.status;
+                currentPage = 1;
+                loadMeetings();
+            });
+        });
+        async function showCreateModal() {
+            editingId = null;
+            selectedAttendees = [];
+            document.getElementById('modalTitle').textContent = '新建会议';
+            document.getElementById('createForm').reset();
+            document.getElementById('sourceTaskId').value = '';
+            document.getElementById('sourceMilestoneId').value = '';
+            document.getElementById('attendeeList').innerHTML = '';
+            document.getElementById('createModal').classList.add('show');
+            await loadAllUsers();
+        }
+        function hideCreateModal() { document.getElementById('createModal').classList.remove('show'); }
+        function normalizeMeetingDateValue(value) {
+            if (!value) return '';
+            if (value.length === 10) return `${value}T10:00`;
+            return value.replace(' ', 'T').substring(0, 16);
+        }
+        function updateAttendeeOptions() {
+            const selectedSet = new Set(selectedAttendees);
+            document.getElementById('attendeeSelect').innerHTML =
+                '<option value="">选择参会人员</option>' +
+                users
+                    .filter(u => !selectedSet.has(u.id))
+                    .map(u => `<option value="${u.id}">${u.name}</option>`)
+                    .join('');
+        }
+        function renderSelectedAttendees() {
+            document.getElementById('attendeeList').innerHTML = selectedAttendees.map(userId => {
+                const user = users.find(u => u.id === userId);
+                const userName = user ? user.name : `用户${userId}`;
+                return `<div class="attendee-item">${userName}<span class="remove" onclick="removeAttendee(${userId}, this)">×</span></div>`;
+            }).join('');
+            updateAttendeeOptions();
+        }
+        function setSelectedAttendees(attendeeIds) {
+            selectedAttendees = [...new Set((attendeeIds || []).map(id => parseInt(id, 10)).filter(id => Number.isInteger(id) && id > 0))];
+            renderSelectedAttendees();
+        }
+        function applyMeetingDefaults(defaults) {
+            if (!defaults) return;
+            document.getElementById('meetingProject').value = defaults.project_id || '';
+            document.getElementById('meetingTitle').value = defaults.title || '';
+            document.getElementById('meetingDate').value = normalizeMeetingDateValue(defaults.meeting_date || defaults.suggested_date || '');
+            document.getElementById('meetingObjective').value = defaults.objective || '';
+            document.getElementById('meetingDescription').value = defaults.description || '';
+            setSelectedAttendees(defaults.attendee_ids || []);
+        }
+        async function loadTaskMeetingDefaults(taskId) {
+            const response = await fetch(`/api/tasks/${taskId}`);
+            const result = await response.json();
+            if (!result.success) {
+                throw new Error(result.message || '加载任务失败');
+            }
+            document.getElementById('sourceTaskId').value = taskId;
+            applyMeetingDefaults(result.data.meeting_defaults || {
+                project_id: result.data.project_id,
+                title: `${result.data.name}推进会议`,
+                objective: result.data.objective,
+                description: result.data.description,
+                attendee_ids: []
+            });
+        }
+        async function loadMilestoneMeetingDefaults(milestoneId) {
+            const response = await fetch(`/api/milestones/${milestoneId}`);
+            const result = await response.json();
+            if (!result.success) {
+                throw new Error(result.message || '加载里程碑失败');
+            }
+            document.getElementById('sourceMilestoneId').value = milestoneId;
+            applyMeetingDefaults(result.data.meeting_defaults || {
+                project_id: result.data.project_id,
+                title: `${result.data.name}评审会议`,
+                objective: result.data.meeting_objective || result.data.objective,
+                description: result.data.description,
+                attendee_ids: []
+            });
+        }
+        async function createFromReminder(reminder) {
+            await showCreateModal();
+            if (reminder.type === 'task') {
+                document.getElementById('sourceTaskId').value = reminder.source_id;
+                if (reminder.meeting_defaults) {
+                    applyMeetingDefaults(reminder.meeting_defaults);
+                } else {
+                    await loadTaskMeetingDefaults(reminder.source_id);
+                }
+                return;
+            }
+            document.getElementById('meetingProject').value = reminder.project_id || '';
+            document.getElementById('meetingTitle').value = reminder.suggested_topic || reminder.source_name || '';
+            document.getElementById('meetingDate').value = normalizeMeetingDateValue(reminder.suggested_date || '');
+            document.getElementById('meetingObjective').value = reminder.objective || '';
+            document.getElementById('meetingDescription').value = reminder.description || '';
+            if (reminder.type === 'milestone') {
+                document.getElementById('sourceMilestoneId').value = reminder.source_id;
+                if (reminder.meeting_defaults) {
+                    applyMeetingDefaults(reminder.meeting_defaults);
+                } else {
+                    await loadMilestoneMeetingDefaults(reminder.source_id);
+                }
+            }
+        }
+        async function loadAllUsers() {
+            if (!users || users.length === 0) {
+                await loadUsers();
+            }
+            updateAttendeeOptions();
+        }
+        async function loadProjectMembers(projectId) {
+            if (!projectId) projectId = document.getElementById('meetingProject').value;
+            if (!projectId) return;
+            try {
+                const response = await fetch(`/api/project-members?project_id=${projectId}`);
+                const result = await response.json();
+                if (result.success) {
+                    const members = result.data;
+                    document.getElementById('attendeeSelect').innerHTML = '<option value="">选择参会人员</option>' + members.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+                }
+            } catch (error) { console.error('加载成员失败:', error); }
+        }
+        function addAttendee() {
+            const select = document.getElementById('attendeeSelect');
+            const userId = parseInt(select.value, 10);
+            if (!userId || selectedAttendees.includes(userId)) return;
+            selectedAttendees.push(userId);
+            renderSelectedAttendees();
+            select.value = '';
+        }
+        function removeAttendee(userId, element) {
+            const parsedUserId = parseInt(userId, 10);
+            selectedAttendees = selectedAttendees.filter(id => id !== parsedUserId);
+            renderSelectedAttendees();
+        }
+        async function editMeeting(id) {
+            try {
+                const response = await fetch(`/api/meetings/${id}`);
+                const result = await response.json();
+                if (result.success) {
+                    const meeting = result.data;
+                    editingId = id;
+                    document.getElementById('modalTitle').textContent = '编辑会议';
+                    document.getElementById('meetingId').value = id;
+                    document.getElementById('meetingProject').value = meeting.project_id;
+                    document.getElementById('meetingTitle').value = meeting.title;
+                    document.getElementById('meetingDate').value = meeting.meeting_date ? meeting.meeting_date.replace(' ', 'T').substring(0, 16) : '';
+                    document.getElementById('meetingType').value = meeting.meeting_type || 'offline';
+                    document.getElementById('meetingLocation').value = meeting.location || '';
+                    document.getElementById('meetingObjective').value = meeting.objective || '';
+                    document.getElementById('meetingDescription').value = meeting.description || '';
+                    document.getElementById('createModal').classList.add('show');
+                    await loadAllUsers();
+                    setSelectedAttendees(meeting.attendees ? meeting.attendees.map(a => a.id) : []);
+                }
+            } catch (error) { console.error('加载会议失败:', error); }
+        }
+        async function saveMeeting() {
+            const projectId = parseInt(document.getElementById('meetingProject').value);
+            console.log('=== 保存会议 ===');
+            console.log('project_id:', projectId);
+            console.log('title:', document.getElementById('meetingTitle').value);
+            console.log('meeting_date:', document.getElementById('meetingDate').value);
+            console.log('meeting_type:', document.getElementById('meetingType').value);
+            console.log('location:', document.getElementById('meetingLocation').value);
+            console.log('attendee_ids:', selectedAttendees);
+            
+            const data = {
+                project_id: projectId,
+                title: document.getElementById('meetingTitle').value,
+                meeting_date: document.getElementById('meetingDate').value,
+                meeting_type: document.getElementById('meetingType').value,
+                location: document.getElementById('meetingLocation').value,
+                objective: document.getElementById('meetingObjective').value,
+                description: document.getElementById('meetingDescription').value,
+                organizer_id: currentUser.id,
+                attendee_ids: selectedAttendees,
+                source_task_id: document.getElementById('sourceTaskId').value || null,
+                source_milestone_id: document.getElementById('sourceMilestoneId').value || null
+            };
+            if (!data.project_id || isNaN(data.project_id)) { alert('请选择项目'); return; }
+            if (!data.title) { alert('请填写会议主题'); return; }
+            if (!data.meeting_date) { alert('请选择会议时间'); return; }
+            if (!data.meeting_type) { alert('请选择会议方式'); return; }
+            if (!data.location) { alert('请填写会议地点或链接'); return; }
+            if (!selectedAttendees || selectedAttendees.length === 0) { alert('请选择参会人员'); return; }
+            try {
+                const url = editingId ? `/api/meetings/${editingId}` : '/api/meetings';
+                const method = editingId ? 'PUT' : 'POST';
+                const response = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+                const result = await response.json();
+                if (result.success) { hideCreateModal(); loadMeetings(); loadReminders(); }
+                else { alert('保存失败: ' + (result.message || '未知错误')); }
+            } catch (error) { console.error(error); alert('网络错误: ' + error.message); }
+        }
+        async function deleteMeeting(id) {
+            if (!confirm('确定要删除这个会议吗？')) return;
+            try {
+                const response = await fetch(`/api/meetings/${id}`, { method: 'DELETE' });
+                const result = await response.json();
+                if (result.success) { loadMeetings(); }
+                else { alert(result.message || '删除失败'); }
+            } catch (error) { alert('网络错误'); }
+        }
+        function uploadMinutes(meetingId) { window.location.href = `minutes.html?meeting_id=${meetingId}`; }
+        async function openCreateModalFromQuery() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('create') !== 'true') return;
+            const taskId = params.get('task_id');
+            const milestoneId = params.get('milestone_id');
+            await showCreateModal();
+            if (taskId) {
+                await loadTaskMeetingDefaults(taskId);
+            } else if (milestoneId) {
+                await loadMilestoneMeetingDefaults(milestoneId);
+            }
+        }
+        window.onload = async function() {
+            if (checkAuth()) {
+                await Promise.all([loadProjects(), loadUsers()]);
+                loadReminders();
+                loadMeetings();
+                await openCreateModalFromQuery();
+            }
+        };
+    </script>
+</body>
+</html>

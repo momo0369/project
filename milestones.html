@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>里程碑管理 - 项目管理平台</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Microsoft YaHei', sans-serif; background: #f5f7fa; min-height: 100vh; }
+        .sidebar { position: fixed; left: 0; top: 0; width: 240px; height: 100vh; background: linear-gradient(180deg, #2c3e50 0%, #1a252f 100%); color: white; padding: 20px 0; z-index: 1000; }
+        .sidebar-header { padding: 0 20px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
+        .sidebar-header h3 { font-size: 18px; margin: 0; }
+        .sidebar-header p { font-size: 12px; opacity: 0.6; margin: 5px 0 0; }
+        .nav-menu { list-style: none; padding: 0 10px; }
+        .nav-menu li { margin-bottom: 5px; }
+        .nav-menu a { display: flex; align-items: center; padding: 12px 15px; color: rgba(255,255,255,0.7); text-decoration: none; border-radius: 8px; transition: all 0.3s; }
+        .nav-menu a:hover, .nav-menu a.active { background: rgba(255,255,255,0.1); color: white; }
+        .nav-menu i { margin-right: 10px; font-size: 18px; }
+        .main-content { margin-left: 240px; padding: 20px 30px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: white; padding: 15px 25px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .header h2 { font-size: 20px; color: #333; margin: 0; }
+        .user-info { display: flex; align-items: center; gap: 15px; }
+        .btn-logout { padding: 8px 16px; background: #e74c3c; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; }
+        .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
+        .filter-box { display: flex; gap: 10px; flex-wrap: wrap; }
+        .filter-box select { padding: 10px 15px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; min-width: 150px; }
+        .btn-primary { padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; }
+        .btn-primary:hover { opacity: 0.9; }
+        .milestone-list { background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .milestone-item { padding: 20px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: flex-start; gap: 20px; }
+        .milestone-item:last-child { border-bottom: none; }
+        .milestone-status { width: 60px; text-align: center; }
+        .status-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 5px; font-size: 18px; }
+        .status-icon.not_started { background: #f5f5f5; color: #999; }
+        .status-icon.in_progress { background: #e3f2fd; color: #2196f3; }
+        .status-icon.completed { background: #e8f5e9; color: #4caf50; }
+        .status-icon.delayed { background: #ffebee; color: #f44336; }
+        .status-text { font-size: 12px; color: #666; }
+        .milestone-content { flex: 1; }
+        .milestone-title { font-size: 16px; font-weight: bold; color: #333; margin-bottom: 8px; }
+        .milestone-meta { display: flex; gap: 30px; font-size: 13px; color: #666; margin-bottom: 10px; }
+        .milestone-meta span { display: flex; align-items: center; gap: 5px; }
+        .milestone-desc { font-size: 13px; color: #999; line-height: 1.6; }
+        .milestone-actions { display: flex; gap: 10px; }
+        .btn-action { padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; }
+        .btn-edit { background: #e3f2fd; color: #2196f3; }
+        .btn-delete { background: #ffebee; color: #f44336; }
+        .btn-meeting { background: #fff3e0; color: #ff9800; }
+        .meeting-tag { display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; background: #fff3e0; color: #ff9800; border-radius: 4px; font-size: 12px; margin-left: 10px; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; }
+        .modal.show { display: flex; }
+        .modal-content { background: white; border-radius: 12px; width: 600px; max-width: 90%; max-height: 90vh; overflow-y: auto; }
+        .modal-header { padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .modal-header h3 { margin: 0; font-size: 18px; }
+        .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #999; }
+        .modal-body { padding: 20px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; color: #666; font-size: 14px; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+        .form-group textarea { min-height: 80px; resize: vertical; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .form-checkbox { display: flex; align-items: center; gap: 8px; }
+        .form-checkbox input { width: auto; }
+        .modal-footer { padding: 15px 20px; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 10px; }
+        .btn-secondary { padding: 10px 20px; background: #f5f5f5; color: #333; border: none; border-radius: 8px; cursor: pointer; }
+        .empty-state { text-align: center; padding: 60px 20px; color: #999; }
+        .empty-state i { font-size: 64px; margin-bottom: 20px; opacity: 0.5; }
+        @media (max-width: 768px) { .sidebar { display: none; } .main-content { margin-left: 0; } .form-row { grid-template-columns: 1fr; } .milestone-meta { flex-direction: column; gap: 10px; } }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h3>项目管理平台</h3>
+            <p>数学院课题管理系统</p>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="index.html"><i class="bi bi-house"></i> 工作台</a></li>
+            <li><a href="projects.html"><i class="bi bi-folder"></i> 项目管理</a></li>
+            <li><a href="tasks.html"><i class="bi bi-check-square"></i> 任务管理</a></li>
+            <li><a href="meetings.html"><i class="bi bi-calendar-event"></i> 会议中心</a></li>
+            <li><a href="minutes.html"><i class="bi bi-file-text"></i> 会议纪要</a></li>
+            <li><a href="notifications.html"><i class="bi bi-bell"></i> 提醒中心</a></li>
+            <li><a href="members.html"><i class="bi bi-people"></i> 成员管理</a></li>
+            <li><a href="settings.html"><i class="bi bi-gear"></i> 系统设置</a></li>
+        </ul>
+    </div>
+    <div class="main-content">
+        <div class="header">
+            <h2>里程碑管理</h2>
+            <div class="user-info">
+                <span id="userName">加载中...</span>
+                <button class="btn-logout" onclick="logout()">退出登录</button>
+            </div>
+        </div>
+        <div class="toolbar">
+            <div class="filter-box">
+                <select id="filterProject" onchange="loadMilestones()">
+                    <option value="">全部项目</option>
+                </select>
+                <select id="filterStatus" onchange="loadMilestones()">
+                    <option value="">全部状态</option>
+                    <option value="not_started">未开始</option>
+                    <option value="in_progress">进行中</option>
+                    <option value="completed">已完成</option>
+                    <option value="delayed">延期</option>
+                </select>
+            </div>
+            <button class="btn-primary" onclick="showCreateModal()"><i class="bi bi-plus"></i> 新建里程碑</button>
+        </div>
+        <div class="milestone-list" id="milestoneList"></div>
+    </div>
+    <div class="modal" id="createModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">新建里程碑</h3>
+                <button class="modal-close" onclick="hideCreateModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="createForm">
+                    <input type="hidden" id="milestoneId">
+                    <div class="form-group">
+                        <label>所属项目 *</label>
+                        <select id="milestoneProject" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>里程碑名称 *</label>
+                        <input type="text" id="milestoneName" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>计划完成日期</label>
+                            <input type="date" id="plannedDate">
+                        </div>
+                        <div class="form-group">
+                            <label>实际完成日期</label>
+                            <input type="date" id="actualDate">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>负责人</label>
+                            <select id="milestoneManager"></select>
+                        </div>
+                        <div class="form-group">
+                            <label>状态</label>
+                            <select id="milestoneStatus">
+                                <option value="not_started">未开始</option>
+                                <option value="in_progress">进行中</option>
+                                <option value="completed">已完成</option>
+                                <option value="delayed">延期</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>里程碑目标</label>
+                        <textarea id="milestoneObjective"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>描述</label>
+                        <textarea id="milestoneDescription"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-checkbox">
+                            <input type="checkbox" id="needMeeting" onchange="toggleMeetingFields()">
+                            需要阶段评审会议
+                        </label>
+                    </div>
+                    <div id="meetingFields" style="display: none;">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>预计会议时间</label>
+                                <input type="date" id="expectedMeetingDate">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>参会角色建议</label>
+                            <input type="text" id="meetingParticipants" placeholder="如：项目经理、技术负责人、测试负责人">
+                        </div>
+                        <div class="form-group">
+                            <label>会议目标建议</label>
+                            <textarea id="meetingObjective"></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="hideCreateModal()">取消</button>
+                <button class="btn-primary" onclick="saveMilestone()">保存</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        let currentUser = null;
+        let projects = [];
+        let users = [];
+        let editingId = null;
+        function checkAuth() {
+            const userStr = localStorage.getItem('user');
+            if (!userStr) { window.location.href = 'login.html'; return false; }
+            currentUser = JSON.parse(userStr);
+            document.getElementById('userName').textContent = currentUser.name;
+            return true;
+        }
+        function logout() { localStorage.removeItem('user'); window.location.href = 'login.html'; }
+        async function loadProjects() {
+            try {
+                const response = await fetch(`/api/projects?page=1&size=100&user_id=${currentUser.id}`);
+                const result = await response.json();
+                if (result.success) {
+                    projects = result.data.list;
+                    document.getElementById('filterProject').innerHTML = '<option value="">全部项目</option>' + projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+                    document.getElementById('milestoneProject').innerHTML = '<option value="">请选择项目</option>' + projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+                    const params = new URLSearchParams(window.location.search);
+                    const projectId = params.get('project_id');
+                    if (projectId) {
+                        document.getElementById('filterProject').value = projectId;
+                        document.getElementById('milestoneProject').value = projectId;
+                    }
+                }
+            } catch (error) { console.error('加载项目失败:', error); }
+        }
+        async function loadUsers() {
+            try {
+                const response = await fetch('/api/users');
+                const result = await response.json();
+                if (result.success) {
+                    users = result.data;
+                    document.getElementById('milestoneManager').innerHTML = '<option value="">请选择</option>' + users.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
+                }
+            } catch (error) { console.error('加载用户失败:', error); }
+        }
+        async function loadMilestones() {
+            const projectId = document.getElementById('filterProject').value;
+            const status = document.getElementById('filterStatus').value;
+            try {
+                let url = '/api/milestones';
+                const params = [];
+                if (projectId) params.push(`project_id=${projectId}`);
+                if (status) params.push(`status=${status}`);
+                if (params.length > 0) url += '?' + params.join('&');
+                const response = await fetch(url);
+                const result = await response.json();
+                if (result.success) { renderMilestones(result.data); }
+            } catch (error) { console.error('加载里程碑失败:', error); }
+        }
+        function renderMilestones(milestones) {
+            const container = document.getElementById('milestoneList');
+            if (!milestones || milestones.length === 0) {
+                container.innerHTML = '<div class="empty-state"><i class="bi bi-flag"></i><p>暂无里程碑数据</p></div>';
+                return;
+            }
+            const statusMap = { 'not_started': '未开始', 'in_progress': '进行中', 'completed': '已完成', 'delayed': '延期' };
+            const iconMap = { 'not_start': 'circle', 'in_progress': 'clock', 'completed': 'check-circle', 'delayed': 'exclamation-circle' };
+            container.innerHTML = milestones.map(m => `
+                <div class="milestone-item">
+                    <div class="milestone-status">
+                        <div class="status-icon ${m.status}"><i class="bi bi-${iconMap[m.status] || 'circle'}"></i></div>
+                        <div class="status-text">${statusMap[m.status] || m.status}</div>
+                    </div>
+                    <div class="milestone-content">
+                        <div class="milestone-title">
+                            ${m.name}
+                            ${m.need_meeting ? '<span class="meeting-tag"><i class="bi bi-calendar-event"></i> 需评审会议</span>' : ''}
+                        </div>
+                        <div class="milestone-meta">
+                            <span><i class="bi bi-folder"></i> ${m.project_name || '-'}</span>
+                            <span><i class="bi bi-calendar"></i> 计划: ${m.planned_date || '-'}</span>
+                            <span><i class="bi bi-check-circle"></i> 实际: ${m.actual_date || '-'}</span>
+                            <span><i class="bi bi-person"></i> ${m.manager_name || '-'}</span>
+                            <span><i class="bi bi-list-task"></i> 关联任务: ${m.task_count || 0}</span>
+                        </div>
+                        <div class="milestone-desc">${m.description || '暂无描述'}</div>
+                    </div>
+                    <div class="milestone-actions">
+                        ${m.need_meeting ? `<button class="btn-action btn-meeting" onclick="createMeeting(${m.id})">创建会议</button>` : ''}
+                        <button class="btn-action btn-edit" onclick="editMilestone(${m.id})">编辑</button>
+                        <button class="btn-action btn-delete" onclick="deleteMilestone(${m.id})">删除</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        function showCreateModal() {
+            editingId = null;
+            document.getElementById('modalTitle').textContent = '新建里程碑';
+            document.getElementById('createForm').reset();
+            document.getElementById('meetingFields').style.display = 'none';
+            document.getElementById('createModal').classList.add('show');
+        }
+        function hideCreateModal() { document.getElementById('createModal').classList.remove('show'); }
+        function toggleMeetingFields() {
+            const checked = document.getElementById('needMeeting').checked;
+            document.getElementById('meetingFields').style.display = checked ? 'block' : 'none';
+        }
+        async function editMilestone(id) {
+            try {
+                const response = await fetch(`/api/milestones`);
+                const result = await response.json();
+                if (result.success) {
+                    const milestone = result.data.find(m => m.id === id);
+                    if (milestone) {
+                        editingId = id;
+                        document.getElementById('modalTitle').textContent = '编辑里程碑';
+                        document.getElementById('milestoneId').value = id;
+                        document.getElementById('milestoneProject').value = milestone.project_id;
+                        document.getElementById('milestoneName').value = milestone.name;
+                        document.getElementById('plannedDate').value = milestone.planned_date || '';
+                        document.getElementById('actualDate').value = milestone.actual_date || '';
+                        document.getElementById('milestoneManager').value = milestone.manager_id || '';
+                        document.getElementById('milestoneStatus').value = milestone.status;
+                        document.getElementById('milestoneObjective').value = milestone.objective || '';
+                        document.getElementById('milestoneDescription').value = milestone.description || '';
+                        document.getElementById('needMeeting').checked = milestone.need_meeting;
+                        document.getElementById('expectedMeetingDate').value = milestone.expected_meeting_date || '';
+                        document.getElementById('meetingParticipants').value = milestone.meeting_participants || '';
+                        document.getElementById('meetingObjective').value = milestone.meeting_objective || '';
+                        toggleMeetingFields();
+                        document.getElementById('createModal').classList.add('show');
+                    }
+                }
+            } catch (error) { console.error('加载里程碑失败:', error); }
+        }
+        async function saveMilestone() {
+            const data = {
+                project_id: document.getElementById('milestoneProject').value,
+                name: document.getElementById('milestoneName').value,
+                planned_date: document.getElementById('plannedDate').value,
+                actual_date: document.getElementById('actualDate').value,
+                manager_id: document.getElementById('milestoneManager').value,
+                status: document.getElementById('milestoneStatus').value,
+                objective: document.getElementById('milestoneObjective').value,
+                description: document.getElementById('milestoneDescription').value,
+                need_meeting: document.getElementById('needMeeting').checked,
+                expected_meeting_date: document.getElementById('expectedMeetingDate').value,
+                meeting_participants: document.getElementById('meetingParticipants').value,
+                meeting_objective: document.getElementById('meetingObjective').value
+            };
+            if (!data.project_id || !data.name) { alert('请填写必填项'); return; }
+            try {
+                const url = editingId ? `/api/milestones/${editingId}` : '/api/milestones';
+                const method = editingId ? 'PUT' : 'POST';
+                const response = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+                const result = await response.json();
+                if (result.success) { hideCreateModal(); loadMilestones(); }
+                else { alert(result.message || '保存失败'); }
+            } catch (error) { alert('网络错误'); }
+        }
+        async function deleteMilestone(id) {
+            if (!confirm('确定要删除这个里程碑吗？')) return;
+            try {
+                const response = await fetch(`/api/milestones/${id}`, { method: 'DELETE' });
+                const result = await response.json();
+                if (result.success) { loadMilestones(); }
+                else { alert(result.message || '删除失败'); }
+            } catch (error) { alert('网络错误'); }
+        }
+        function createMeeting(milestoneId) {
+            window.location.href = `meetings.html?create=true&milestone_id=${milestoneId}`;
+        }
+        window.onload = async function() { 
+            if (checkAuth()) { 
+                await Promise.all([loadProjects(), loadUsers()]);
+                loadMilestones(); 
+            } 
+        };
+    </script>
+</body>
+</html>

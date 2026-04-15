@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>工作台 - 项目管理平台</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+        }
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 240px;
+            height: 100vh;
+            background: linear-gradient(180deg, #2c3e50 0%, #1a252f 100%);
+            color: white;
+            padding: 20px 0;
+            z-index: 1000;
+        }
+        .sidebar-header {
+            padding: 0 20px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 20px;
+        }
+        .sidebar-header h3 {
+            font-size: 18px;
+            margin: 0;
+        }
+        .sidebar-header p {
+            font-size: 12px;
+            opacity: 0.6;
+            margin: 5px 0 0;
+        }
+        .nav-menu {
+            list-style: none;
+            padding: 0 10px;
+        }
+        .nav-menu li {
+            margin-bottom: 5px;
+        }
+        .nav-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        .nav-menu a:hover, .nav-menu a.active {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+        .nav-menu i {
+            margin-right: 10px;
+            font-size: 18px;
+        }
+        .main-content {
+            margin-left: 240px;
+            padding: 20px 30px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            background: white;
+            padding: 15px 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .header h2 {
+            font-size: 20px;
+            color: #333;
+            margin: 0;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .user-info span {
+            color: #666;
+        }
+        .btn-logout {
+            padding: 8px 16px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .btn-logout:hover {
+            background: #c0392b;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        .stat-card .icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+        .stat-card .icon.blue { background: #e3f2fd; color: #2196f3; }
+        .stat-card .icon.green { background: #e8f5e9; color: #4caf50; }
+        .stat-card .icon.orange { background: #fff3e0; color: #ff9800; }
+        .stat-card .icon.red { background: #ffebee; color: #f44336; }
+        .stat-card .number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        #unreadNotifications {
+            color: #f44336;
+        }
+        .stat-card .label {
+            color: #666;
+            font-size: 14px;
+        }
+        .content-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+        .panel {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .panel-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .panel-header h4 {
+            font-size: 16px;
+            color: #333;
+            margin: 0;
+        }
+        .panel-body {
+            padding: 15px 20px;
+        }
+        .reminder-item {
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        .reminder-item:last-child {
+            border-bottom: none;
+        }
+        .reminder-item .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+        .badge-red { background: #ffebee; color: #f44336; }
+        .badge-orange { background: #fff3e0; color: #ff9800; }
+        .badge-blue { background: #e3f2fd; color: #2196f3; }
+        .reminder-item .content {
+            flex: 1;
+        }
+        .reminder-item .title {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 4px;
+        }
+        .reminder-item .desc {
+            font-size: 12px;
+            color: #999;
+        }
+        .meeting-item {
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .meeting-item:last-child {
+            border-bottom: none;
+        }
+        .meeting-item .title {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .meeting-item .info {
+            font-size: 12px;
+            color: #999;
+        }
+        .meeting-item .title-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 5px;
+        }
+        .meeting-item .tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+        .meeting-item .tag.upcoming {
+            background: #e3f2fd;
+            color: #2196f3;
+        }
+        .meeting-item .tag.completed {
+            background: #e8f5e9;
+            color: #4caf50;
+        }
+        .todo-panel {
+            margin-bottom: 20px;
+        }
+        .todo-item {
+            padding: 14px 0;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+        }
+        .todo-item:last-child {
+            border-bottom: none;
+        }
+        .todo-item .title {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 6px;
+        }
+        .todo-item .meta {
+            font-size: 12px;
+            color: #999;
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+        .todo-item .status {
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+        .todo-item .status.not_started { background: #f5f5f5; color: #999; }
+        .todo-item .status.in_progress { background: #e3f2fd; color: #2196f3; }
+        .todo-item .status.overdue { background: #ffebee; color: #f44336; }
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+        .btn-link {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 13px;
+        }
+        .btn-link:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 1200px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h3>项目管理平台</h3>
+            <p>数学院课题管理系统</p>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="index.html" class="active"><i class="bi bi-house"></i> 工作台</a></li>
+            <li><a href="projects.html"><i class="bi bi-folder"></i> 项目管理</a></li>
+            <li><a href="tasks.html"><i class="bi bi-check-square"></i> 任务管理</a></li>
+            <li><a href="meetings.html"><i class="bi bi-calendar-event"></i> 会议中心</a></li>
+            <li><a href="minutes.html"><i class="bi bi-file-text"></i> 会议纪要</a></li>
+            <li><a href="notifications.html"><i class="bi bi-bell"></i> 提醒中心</a></li>
+            <li><a href="members.html"><i class="bi bi-people"></i> 成员管理</a></li>
+            <li><a href="settings.html"><i class="bi bi-gear"></i> 系统设置</a></li>
+        </ul>
+    </div>
+    <div class="main-content">
+        <div class="header">
+            <h2>工作台</h2>
+            <div class="user-info">
+                <span id="userName">加载中...</span>
+                <button class="btn-logout" onclick="logout()">退出登录</button>
+            </div>
+        </div>
+        <div class="stats-grid">
+            <div class="stat-card" onclick="location.href='projects.html'">
+                <div class="icon blue"><i class="bi bi-folder"></i></div>
+                <div class="number" id="myProjects">0</div>
+                <div class="label">我的项目</div>
+            </div>
+            <div class="stat-card" onclick="location.href='tasks.html?status=in_progress'">
+                <div class="icon green"><i class="bi bi-check-square"></i></div>
+                <div class="number" id="myTasks">0</div>
+                <div class="label">进行中任务</div>
+            </div>
+            <div class="stat-card" onclick="location.href='tasks.html?status=overdue'">
+                <div class="icon red"><i class="bi bi-exclamation-triangle"></i></div>
+                <div class="number" id="overdueTasks">0</div>
+                <div class="label">逾期任务</div>
+            </div>
+            <div class="stat-card" onclick="location.href='notifications.html'">
+                <div class="icon orange"><i class="bi bi-bell"></i></div>
+                <div class="number" id="unreadNotifications">0</div>
+                <div class="label">未读提醒</div>
+            </div>
+        </div>
+        <div class="panel todo-panel">
+            <div class="panel-header">
+                <h4>我的待办</h4>
+                <a id="myTodoLink" href="tasks.html" class="btn-link">查看全部</a>
+            </div>
+            <div class="panel-body" id="myTodoList">
+                <div class="empty-state">
+                    <i class="bi bi-list-check"></i>
+                    <p>暂无待办任务</p>
+                </div>
+            </div>
+        </div>
+        <div class="content-grid">
+            <div class="panel">
+                <div class="panel-header">
+                    <h4>待创建会议提醒</h4>
+                    <a href="meetings.html" class="btn-link">查看全部</a>
+                </div>
+                <div class="panel-body" id="meetingReminders">
+                    <div class="empty-state">
+                        <i class="bi bi-calendar-check"></i>
+                        <p>暂无待创建会议提醒</p>
+                    </div>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-header">
+                    <h4>最近会议</h4>
+                    <a href="meetings.html" class="btn-link">查看全部</a>
+                </div>
+                <div class="panel-body" id="recentMeetings">
+                    <div class="empty-state">
+                        <i class="bi bi-calendar"></i>
+                        <p>暂无即将召开的会议</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        let currentUser = null;
+        function normalizeCurrentUser(user) {
+            if (!user) return user;
+            if (user.role === 'manager') user.role = user.username === 'admin' ? 'admin' : 'project_manager';
+            if (user.role === 'leader') user.role = 'project_owner';
+            if (user.role === 'observer') user.role = 'member';
+            return user;
+        }
+        function checkAuth() {
+            const userStr = localStorage.getItem('user');
+            if (!userStr) {
+                window.location.href = 'login.html';
+                return false;
+            }
+            currentUser = normalizeCurrentUser(JSON.parse(userStr));
+            document.getElementById('userName').textContent = currentUser.name;
+            document.getElementById('myTodoLink').href = `tasks.html?manager_id=${currentUser.id}`;
+            return true;
+        }
+        function logout() {
+            localStorage.removeItem('user');
+            window.location.href = 'login.html';
+        }
+        async function loadDashboard() {
+            try {
+                const response = await fetch(`/api/dashboard?user_id=${currentUser.id}`);
+                const result = await response.json();
+                if (result.success) {
+                    document.getElementById('myProjects').textContent = result.data.my_projects;
+                    document.getElementById('myTasks').textContent = result.data.my_tasks;
+                    document.getElementById('overdueTasks').textContent = result.data.overdue_tasks;
+                    document.getElementById('unreadNotifications').textContent = result.data.unread_notifications;
+                    renderMeetingReminders(result.data.meeting_reminders);
+                    renderRecentMeetings(result.data.recent_meetings);
+                    loadMyTodo();
+                }
+            } catch (error) {
+                console.error('加载数据失败:', error);
+            }
+        }
+        function renderMeetingReminders(reminders) {
+            const container = document.getElementById('meetingReminders');
+            if (!reminders || reminders.length === 0) {
+                container.innerHTML = '<div class="empty-state"><i class="bi bi-calendar-check"></i><p>暂无待创建会议提醒</p></div>';
+                return;
+            }
+            const getCreateLink = reminder => {
+                if (reminder.type === 'task') {
+                    return `meetings.html?create=true&task_id=${reminder.source_id}`;
+                }
+                if (reminder.type === 'milestone') {
+                    return `meetings.html?create=true&milestone_id=${reminder.source_id}`;
+                }
+                return 'meetings.html?create=true';
+            };
+            container.innerHTML = reminders.map(r => `
+                <div class="reminder-item">
+                    <span class="badge badge-orange">会议提醒</span>
+                    <div class="content">
+                        <div class="title">${r.suggested_topic || r.source_name}</div>
+                        <div class="desc">${r.reason || ''}</div>
+                        <div class="desc" style="margin-top: 4px; color: #999;">
+                            <i class="bi bi-folder"></i> ${r.project_name || '-'} &nbsp;
+                            <i class="bi bi-calendar"></i> ${r.suggested_date || '待定'}
+                        </div>
+                    </div>
+                    <a href="${getCreateLink(r)}" class="btn-link">创建会议</a>
+                </div>
+            `).join('');
+        }
+        function renderRecentMeetings(meetings) {
+            const container = document.getElementById('recentMeetings');
+            if (!meetings || meetings.length === 0) {
+                container.innerHTML = '<div class="empty-state"><i class="bi bi-calendar"></i><p>暂无即将召开的会议</p></div>';
+                return;
+            }
+            container.innerHTML = meetings.map(m => `
+                <div class="meeting-item" onclick="location.href='meeting_detail.html?id=${m.id}'" style="cursor: pointer;">
+                    <div class="title-row">
+                        <div class="title">${m.title}</div>
+                        <span class="tag ${m.time_tag === '已结束' ? 'completed' : 'upcoming'}">${m.time_tag || '未开始'}</span>
+                    </div>
+                    <div class="info">
+                        <i class="bi bi-clock"></i> ${m.meeting_date || '待定'} &nbsp;
+                        <i class="bi bi-people"></i> ${m.organizer_name || ''} &nbsp;
+                        <i class="bi bi-folder"></i> ${m.project_name || '-'}
+                    </div>
+                </div>
+            `).join('');
+        }
+        async function loadMyTodo() {
+            try {
+                const response = await fetch(`/api/tasks?page=1&size=20&manager_id=${currentUser.id}&user_id=${currentUser.id}`);
+                const result = await response.json();
+                if (!result.success) {
+                    renderMyTodo([]);
+                    return;
+                }
+                const todoTasks = (result.data.list || []).filter(task => task.status !== 'completed').slice(0, 5);
+                renderMyTodo(todoTasks);
+            } catch (error) {
+                console.error('加载我的待办失败:', error);
+            }
+        }
+        function renderMyTodo(tasks) {
+            const container = document.getElementById('myTodoList');
+            if (!tasks || tasks.length === 0) {
+                container.innerHTML = '<div class="empty-state"><i class="bi bi-list-check"></i><p>暂无待办任务</p></div>';
+                return;
+            }
+            const statusMap = { not_started: '未开始', in_progress: '进行中', overdue: '已逾期' };
+            container.innerHTML = tasks.map(task => `
+                <div class="todo-item" onclick="location.href='tasks.html?manager_id=${currentUser.id}'">
+                    <div class="title">${task.name}</div>
+                    <div class="meta">
+                        <span><i class="bi bi-folder"></i> ${task.project_name || '-'}</span>
+                        <span><i class="bi bi-calendar"></i> ${task.due_date || '待定'}</span>
+                        <span class="status ${task.status}">${statusMap[task.status] || task.status}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+        window.onload = function() {
+            if (checkAuth()) {
+                loadDashboard();
+            }
+        };
+    </script>
+</body>
+</html>
