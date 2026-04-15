@@ -13,12 +13,23 @@ from email.mime.text import MIMEText
 from email.header import Header
 from werkzeug.utils import secure_filename
 
-app = Flask(__name__, static_folder='.', static_url_path='')
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+STATIC_DIR = BASE_DIR
+
+app = Flask(__name__, static_folder=STATIC_DIR, static_url_path='')
 CORS(app)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///project_management.db'
+database_url = os.getenv('DATABASE_URL', '').strip()
+if database_url.startswith('postgres://'):
+    database_url = database_url.replace('postgres://', 'postgresql://', 1)
+if not database_url:
+    database_url = f"sqlite:///{os.path.join(BASE_DIR, 'instance', 'project_management.db')}"
+
+upload_folder = os.getenv('UPLOAD_FOLDER', os.path.join(BASE_DIR, 'uploads'))
+
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['UPLOAD_FOLDER'] = 'uploads'
+app.config['UPLOAD_FOLDER'] = upload_folder
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
 db = SQLAlchemy(app)
@@ -2287,12 +2298,12 @@ def generate_reminders():
 
 @app.route('/<path:path>')
 def serve_static(path):
-    return send_from_directory('.', path)
+    return send_from_directory(STATIC_DIR, path)
 
 
 @app.route('/')
 def index():
-    return send_from_directory('.', 'login.html')
+    return send_from_directory(STATIC_DIR, 'login.html')
 
 
 def migrate_legacy_schema():
@@ -2403,4 +2414,6 @@ with app.app_context():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host='127.0.0.1', port=5000, use_reloader=False)
+    port = int(os.getenv('PORT', '5000'))
+    debug = os.getenv('FLASK_DEBUG', 'false').lower() == 'true'
+    app.run(debug=debug, host='0.0.0.0', port=port, use_reloader=False)
