@@ -23,7 +23,9 @@ database_url = os.getenv('DATABASE_URL', '').strip()
 if database_url.startswith('postgres://'):
     database_url = database_url.replace('postgres://', 'postgresql://', 1)
 if not database_url:
-    database_url = f"sqlite:///{os.path.join(BASE_DIR, 'instance', 'project_management.db')}"
+    instance_dir = os.path.join(BASE_DIR, 'instance')
+    os.makedirs(instance_dir, exist_ok=True)
+    database_url = f"sqlite:///{os.path.join(instance_dir, 'project_management.db')}"
 
 upload_folder = os.getenv('UPLOAD_FOLDER', os.path.join(BASE_DIR, 'uploads'))
 
@@ -34,8 +36,7 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
 db = SQLAlchemy(app)
 
-if not os.path.exists(app.config['UPLOAD_FOLDER']):
-    os.makedirs(app.config['UPLOAD_FOLDER'])
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 
 class User(db.Model):
